@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社会 フラッシュカード</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+  :root {
+    --navy: #1a2744;
+    --navy-light: #253460;
+    --blue: #2c4a8a;
+    --blue-mid: #3a5fa8;
+    --accent: #e8a020;
+    --accent-light: #f5c35a;
+    --bg: #f0f3f8;
+    --bg-card: #ffffff;
+    --text: #1a1a2e;
+    --text-muted: #5a6580;
+    --border: #d0d8e8;
+    --correct: #1e7d4b;
+    --wrong: #c0392b;
+    --correct-bg: #e8f5ee;
+    --wrong-bg: #fdeaea;
+    --header-h: 60px;
+    --green: #27ae60;
+    --orange: #e67e22;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ═══════════════════════════════
+     HEADER
+  ═══════════════════════════════ */
+  .header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--navy);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.25);
+  }
+  .header-title {
+    font-family: 'Noto Serif JP', serif;
+    color: #fff; font-size: 17px; font-weight: 700; letter-spacing: 0.05em;
+  }
+  .header-title span { color: var(--accent-light); }
+  .header-right {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .header-counter {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px; padding: 5px 14px;
+    color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .header-progress-wrap {
+    flex: 1; margin: 0 16px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px; height: 6px; overflow: hidden;
+    min-width: 60px; max-width: 200px;
+  }
+  .header-progress-bar { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s ease; }
+
+  /* ═══════════════════════════════
+     MAIN WRAPPER
+  ═══════════════════════════════ */
+  #app {
+    padding-top: var(--header-h);
+    max-width: 780px;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 60px;
+  }
+
+  /* ═══════════════════════════════
+     QUIZ AREA
+  ═══════════════════════════════ */
+  #quiz-area { padding-top: 28px; }
+
+  /* ─ モード選択 ─ */
+  .mode-row {
+    display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .mode-btn {
+    flex: 1; min-width: 80px;
+    background: var(--bg-card); border: 2px solid var(--border);
+    border-radius: 10px; padding: 10px 8px;
+    font-size: 13px; font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text-muted); cursor: pointer;
+    text-align: center; transition: all 0.2s;
+  }
+  .mode-btn:hover { border-color: var(--blue-mid); color: var(--navy); transform: translateY(-1px); }
+  .mode-btn.active {
+    background: linear-gradient(135deg, var(--blue-mid), var(--navy));
+    color: #fff; border-color: transparent;
+    box-shadow: 0 3px 10px rgba(42,80,160,0.35);
+  }
+  .mode-btn.exam-btn.active {
+    background: linear-gradient(135deg, #b8360a, #7a1a00);
+    box-shadow: 0 3px 10px rgba(184,54,10,0.45);
+  }
+  .mode-btn.exam-btn { border-color: #e05a20; color: #b8360a; }
+  .mode-btn.exam-btn:hover:not(.active) { border-color: #e05a20; background: #fff3ee; color: #b8360a; }
+
+  /* ─ タイマーバー ─ */
+  .timer-bar {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--bg-card); border-radius: 12px;
+    padding: 12px 16px; margin-bottom: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(26,39,68,0.06);
+  }
+  .timer-circle { position: relative; width: 48px; height: 48px; flex-shrink: 0; }
+  .timer-circle svg { transform: rotate(-90deg); }
+  .timer-circle .timer-bg { fill: none; stroke: var(--border); stroke-width: 4; }
+  .timer-circle .timer-fg { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+  .timer-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: var(--navy); }
+  .timer-label { font-size: 12px; color: var(--text-muted); }
+  .timer-score { margin-left: auto; font-size: 13px; color: var(--text-muted); background: #fff8e6; border: 1px solid #f0c060; border-radius: 6px; padding: 3px 10px; }
+  .timer-urgent .timer-fg { stroke: var(--wrong); }
+  .timer-urgent .timer-num { color: var(--wrong); }
+
+  /* ─ 統計バー ─ */
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--bg-card); border-radius: 12px; padding: 12px 8px;
+    text-align: center; border: 1.5px solid var(--border);
+    box-shadow: 0 1px 4px rgba(26,39,68,0.06);
+  }
+  .stat-num { font-size: 24px; font-weight: 700; color: var(--navy); }
+  .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-weight: 500; }
+  .stat.correct .stat-num { color: var(--correct); }
+  .stat.wrong .stat-num { color: var(--wrong); }
+
+  /* ─ 問題カード ─ */
+  .card {
+    background: var(--bg-card); border: 2px solid var(--border);
+    border-radius: 14px; padding: 24px;
+    box-shadow: 0 2px 10px rgba(26,39,68,0.07);
+    margin-bottom: 16px;
+  }
+  .q-num {
+    font-size: 11px; font-weight: 700; color: var(--blue-mid);
+    letter-spacing: 0.1em; margin-bottom: 8px;
+  }
+  .category-badge {
+    display: inline-block; font-size: 11px; padding: 3px 12px;
+    border-radius: 20px; background: #eef3fb;
+    color: var(--blue-mid); font-weight: 700; margin-bottom: 16px;
+    border: 1px solid rgba(58,95,168,0.2);
+    letter-spacing: 0.04em;
+  }
+  .q-row { display: flex; align-items: flex-start; gap: 16px; }
+  .question-text {
+    font-size: 15px; color: var(--text); line-height: 1.9; flex: 1;
+    font-weight: 500;
+  }
+  .map-symbol {
+    flex-shrink: 0; width: 84px; height: 84px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg); border: 1.5px solid var(--border);
+    border-radius: 10px;
+  }
+  .map-symbol svg { width: 68px; height: 68px; }
+  .map-symbol img { width: 68px; height: 68px; object-fit: contain; }
+
+  /* ─ 選択肢 ─ */
+  .choices { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+  .choice-btn {
+    width: 100%; padding: 12px 16px;
+    border-radius: 8px; font-size: 14px; font-weight: 500;
+    font-family: 'Noto Sans JP', sans-serif;
+    text-align: left; cursor: pointer;
+    border: 1.5px solid var(--border); background: var(--bg);
+    color: var(--text); transition: all 0.15s; line-height: 1.5;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .choice-btn::before {
+    content: attr(data-label);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--border); color: var(--text-muted);
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .choice-btn:hover:not(.disabled) { border-color: var(--blue-mid); background: #eef3fb; transform: translateX(2px); }
+  .choice-btn:hover:not(.disabled)::before { background: var(--blue-mid); color: #fff; }
+  .choice-btn.selected-correct { background: var(--correct-bg); border-color: var(--correct); color: var(--correct); }
+  .choice-btn.selected-correct::before { background: var(--correct); color: #fff; }
+  .choice-btn.selected-wrong { background: var(--wrong-bg); border-color: var(--wrong); color: var(--wrong); }
+  .choice-btn.selected-wrong::before { background: var(--wrong); color: #fff; }
+  .choice-btn.show-correct { background: var(--correct-bg); border-color: var(--correct); color: var(--correct); }
+  .choice-btn.show-correct::before { background: var(--correct); color: #fff; }
+  .choice-btn.disabled { pointer-events: none; opacity: 0.45; }
+  .choice-btn.show-correct.disabled { opacity: 1; }
+
+  /* ─ フィードバック ─ */
+  .feedback {
+    margin-top: 14px; padding: 10px 14px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; display: none;
+  }
+  .feedback.correct { background: var(--correct-bg); color: var(--correct); display: block; border-left: 3px solid var(--correct); }
+  .feedback.wrong { background: var(--wrong-bg); color: var(--wrong); display: block; border-left: 3px solid var(--wrong); }
+
+  /* ─ 解説 ─ */
+  .explanation {
+    margin-top: 10px; padding: 13px 16px;
+    background: #f8f4e8; border-radius: 8px;
+    font-size: 13px; color: #5a4400; line-height: 1.8;
+    display: none; border-left: 3px solid var(--accent);
+  }
+  .explanation.visible { display: block; }
+  .explanation a { color: var(--blue-mid); font-size: 12px; display: block; margin-top: 6px; word-break: break-all; }
+
+  /* ─ 次へボタン ─ */
+  .btn-next {
+    background: linear-gradient(135deg, var(--blue-mid), var(--navy));
+    color: #fff; width: 100%; padding: 14px;
+    border-radius: 10px; font-size: 15px; font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer; border: none; margin-top: 12px; display: none;
+    letter-spacing: 0.04em;
+    box-shadow: 0 4px 14px rgba(42,80,160,0.3);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(42,80,160,0.4); }
+
+  /* ═══════════════════════════════
+     RESULTS SCREEN
+  ═══════════════════════════════ */
+  .results {
+    display: none; padding-top: 28px;
+  }
+  .result-hero {
+    background: linear-gradient(135deg, var(--navy), var(--blue));
+    border-radius: 16px; padding: 40px; text-align: center;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 24px rgba(26,39,68,0.2);
+  }
+  .result-hero h2 {
+    font-family: 'Noto Serif JP', serif;
+    color: #fff; font-size: 18px; margin-bottom: 16px;
+  }
+  .score-big { font-size: 68px; font-weight: 700; color: var(--accent-light); line-height: 1; }
+  .score-msg { color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 10px; }
+  .result-time { color: rgba(255,255,255,0.65); font-size: 13px; margin-top: 8px; }
+  .exam-badge {
+    display:inline-block; background: linear-gradient(135deg,#b8360a,#7a1a00);
+    color:#fff; font-size:12px; font-weight:700; padding:3px 12px;
+    border-radius:20px; margin-bottom:10px; letter-spacing:0.06em;
+  }
+
+  .result-stats-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-bottom: 20px;
+  }
+  .result-stat {
+    background: var(--bg-card); border-radius: 12px; padding: 16px;
+    text-align: center; border: 1.5px solid var(--border);
+    box-shadow: 0 1px 6px rgba(26,39,68,0.06);
+  }
+  .result-stat .stat-num { font-size: 28px; font-weight: 700; }
+  .result-stat.correct .stat-num { color: var(--correct); }
+  .result-stat.wrong .stat-num { color: var(--wrong); }
+
+  /* 分野別正答率 */
+  .cat-breakdown {
+    background: var(--bg-card); border-radius: 12px; padding: 18px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 6px rgba(26,39,68,0.06);
+    border: 1px solid var(--border);
+  }
+  .cat-breakdown h3 {
+    font-size: 12px; font-weight: 700; color: var(--text-muted);
+    letter-spacing: 0.1em; margin-bottom: 14px;
+  }
+  .cat-row { margin-bottom: 12px; }
+  .cat-row:last-child { margin-bottom: 0; }
+  .cat-row-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+  .cat-name { font-size: 13px; font-weight: 600; color: var(--navy); }
+  .cat-pct { font-size: 13px; font-weight: 700; color: var(--correct); }
+  .cat-pct.low { color: var(--wrong); }
+  .cat-bar-bg { width: 100%; height: 8px; background: #e8ecf2; border-radius: 4px; overflow: hidden; }
+  .cat-bar-fill { height: 8px; border-radius: 4px; background: var(--correct); transition: width 0.6s ease; }
+  .cat-bar-fill.low { background: var(--wrong); }
+  .cat-detail { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* リザルトボタン群 */
+  .result-btns { display: flex; flex-direction: column; gap: 10px; }
+  .btn-restart {
+    display: block; width: 100%;
+    background: linear-gradient(135deg, var(--blue-mid), var(--navy));
+    color: #fff; border: none; border-radius: 10px;
+    padding: 15px; font-size: 15px; font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer; letter-spacing: 0.04em;
+    box-shadow: 0 4px 16px rgba(42,80,160,0.3);
+    transition: transform 0.15s;
+  }
+  .btn-restart:hover { transform: translateY(-2px); }
+  .btn-review, .btn-top, .btn-ranking {
+    display: block; width: 100%;
+    background: var(--bg-card); color: var(--navy);
+    border: 2px solid var(--border); border-radius: 10px;
+    padding: 13px; font-size: 14px; font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer; text-align: center;
+    transition: all 0.15s;
+  }
+  .btn-review:hover, .btn-top:hover, .btn-ranking:hover {
+    border-color: var(--blue-mid); background: #eef3fb;
+  }
+
+  /* ═══════════════════════════════
+     ランキングモーダル
+  ═══════════════════════════════ */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 200;
+    align-items: flex-end; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: #fff; border-radius: 20px 20px 0 0;
+    width: 100%; max-width: 780px;
+    padding: 24px 24px 40px; max-height: 80vh; overflow-y: auto;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-header h2 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 16px; font-weight: 700; color: var(--navy);
+  }
+  .modal-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); }
+  .rank-tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .rank-tab {
+    flex: 1; padding: 8px 4px; border-radius: 8px;
+    font-size: 13px; border: 2px solid var(--border);
+    background: var(--bg-card); color: var(--text-muted);
+    cursor: pointer; text-align: center; font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif; transition: all 0.2s;
+  }
+  .rank-tab.active {
+    background: linear-gradient(135deg, var(--blue-mid), var(--navy));
+    color: #fff; border-color: transparent;
+  }
+  .rank-tab[data-mode="exam"].active {
+    background: linear-gradient(135deg, #b8360a, #7a1a00);
+  }
+  .rank-list { display: flex; flex-direction: column; gap: 8px; }
+  .rank-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 10px;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .rank-medal { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+  .rank-info { flex: 1; min-width: 0; }
+  .rank-name { font-size: 13px; font-weight: 700; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rank-detail { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .rank-score { font-size: 18px; font-weight: 700; color: var(--correct); flex-shrink: 0; }
+  .rank-empty { text-align: center; padding: 32px 0; color: var(--text-muted); font-size: 14px; }
+  .rank-clear-btn {
+    width: 100%; padding: 11px; margin-top: 14px;
+    background: var(--bg-card); border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 13px; color: var(--wrong);
+    cursor: pointer; font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 600;
+  }
+
+  /* ═══════════════════════════════
+     名前入力モーダル
+  ═══════════════════════════════ */
+  .name-modal {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5); z-index: 300;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .name-modal.open { display: flex; }
+  .name-box {
+    background: #fff; border-radius: 16px; padding: 28px 24px;
+    width: 100%; max-width: 360px;
+    box-shadow: 0 8px 40px rgba(26,39,68,0.25);
+  }
+  .name-box h3 {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 16px; font-weight: 700; margin-bottom: 6px; color: var(--navy);
+  }
+  .name-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.6; }
+  .name-input {
+    width: 100%; padding: 12px 14px; border-radius: 8px;
+    border: 1.5px solid var(--border); font-size: 15px; outline: none;
+    font-family: 'Noto Sans JP', sans-serif; color: var(--text);
+    transition: border-color 0.2s;
+  }
+  .name-input:focus { border-color: var(--blue-mid); }
+  .name-btns { display: flex; gap: 8px; margin-top: 14px; }
+  .name-btn-ok {
+    flex: 1; padding: 12px;
+    background: linear-gradient(135deg, var(--blue-mid), var(--navy));
+    color: #fff; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif; cursor: pointer;
+  }
+  .name-btn-skip {
+    flex: 1; padding: 12px; background: var(--bg);
+    color: var(--text-muted); border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif; cursor: pointer; font-weight: 600;
+  }
+
+  .header-back {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 8px; padding: 6px 12px;
+    color: #fff; font-size: 18px; font-weight: 700;
+    cursor: pointer; flex-shrink: 0; margin-right: 8px;
+    transition: background 0.15s;
+    line-height: 1;
+  }
+  .header-back:hover { background: rgba(255,255,255,0.22); }
+
+  .header-save-btn {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 8px; padding: 5px 10px;
+    color: #fff; font-size: 17px;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s;
+    line-height: 1;
+  }
+  .header-save-btn:hover { background: rgba(255,255,255,0.26); }
+  .header-save-btn.saved {
+    background: rgba(39,174,96,0.35);
+    border-color: rgba(39,174,96,0.5);
+  }
+
+  .resume-card {
+    border-color: rgba(30,125,75,0.35) !important;
+    background: #f4fbf7 !important;
+    margin-bottom: 4px;
+  }
+  .resume-card:hover {
+    border-color: #1e7d4b !important;
+    box-shadow: 0 6px 20px rgba(30,125,75,0.18) !important;
+  }
+
+  /* ─ 一時保存トースト ─ */
+  #save-toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: #fff;
+    padding: 11px 24px; border-radius: 24px;
+    font-size: 14px; font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    z-index: 500; opacity: 0; transition: opacity 0.3s;
+    pointer-events: none; white-space: nowrap;
+  }
+  #save-toast.show { opacity: 1; }
+
+  /* ─ TOP パネル共通 ─ */
+  .top-panel {
+    width: 100%;
+    background: var(--bg-card); border: 1.5px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    box-shadow: 0 2px 10px rgba(26,39,68,0.07);
+  }
+  .top-panel-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    background: #f7f9fd;
+  }
+  .top-panel-icon { font-size: 18px; flex-shrink: 0; }
+  .top-panel-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px; font-weight: 700; color: var(--navy);
+    flex: 1;
+  }
+  .top-panel-tabs { display: flex; gap: 6px; }
+  .top-tab {
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    border: 1.5px solid var(--border);
+    background: var(--bg-card); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .top-tab.active {
+    background: var(--navy); color: #fff; border-color: var(--navy);
+  }
+  .top-panel-tabs2 {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .top-tab2 {
+    flex: 1; padding: 8px 4px;
+    font-size: 12px; font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    border: none; border-right: 1px solid var(--border);
+    background: var(--bg); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .top-tab2:last-child { border-right: none; }
+  .top-tab2.active { background: #fff; color: var(--navy); font-weight: 700; }
+
+  /* ─ 分野別正答率（TOPパネル内）─ */
+  .top-cat-section { padding: 14px 18px; }
+  .top-cat-section + .top-cat-section {
+    border-top: 1px dashed var(--border);
+  }
+  .top-cat-mode-label {
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    letter-spacing: 0.08em; margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+  .top-cat-row { margin-bottom: 10px; }
+  .top-cat-row:last-child { margin-bottom: 0; }
+  .top-cat-row-hd {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .top-cat-name { font-size: 13px; font-weight: 600; color: var(--navy); }
+  .top-cat-pct { font-size: 13px; font-weight: 700; }
+  .top-cat-pct.hi { color: var(--correct); }
+  .top-cat-pct.mid { color: var(--orange); }
+  .top-cat-pct.lo { color: var(--wrong); }
+  .top-cat-bar-bg { width:100%; height:7px; background:#e8ecf2; border-radius:4px; overflow:hidden; }
+  .top-cat-bar-fill { height:7px; border-radius:4px; transition: width 0.6s ease; }
+  .top-cat-bar-fill.hi { background: var(--correct); }
+  .top-cat-bar-fill.mid { background: var(--orange); }
+  .top-cat-bar-fill.lo { background: var(--wrong); }
+  .top-cat-detail { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .top-cat-empty {
+    padding: 24px 0; text-align: center;
+    font-size: 13px; color: var(--text-muted);
+  }
+  .top-cat-summary {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    padding: 12px 18px; border-top: 1px solid var(--border);
+    background: #f7f9fd;
+  }
+  .top-cat-summary-chip {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    font-weight: 700;
+  }
+  .top-cat-summary-chip.weak {
+    background: #fdeaea; color: var(--wrong);
+    border: 1px solid rgba(192,57,43,0.25);
+  }
+  .top-cat-summary-chip.strong {
+    background: var(--correct-bg); color: var(--correct);
+    border: 1px solid rgba(30,125,75,0.25);
+  }
+
+  /* ─ ランキング（TOPパネル内）─ */
+  .top-rank-list { padding: 10px 14px; display: flex; flex-direction: column; gap: 7px; }
+  .top-rank-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .top-rank-medal { font-size: 18px; width: 26px; text-align: center; flex-shrink: 0; }
+  .top-rank-info { flex: 1; min-width: 0; }
+  .top-rank-name { font-size: 13px; font-weight: 700; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top-rank-detail { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .top-rank-score { font-size: 17px; font-weight: 700; color: var(--correct); flex-shrink: 0; }
+  .top-rank-empty { padding: 24px 0; text-align: center; font-size: 13px; color: var(--text-muted); }
+  .top-panel-clear {
+    display: block; width: calc(100% - 28px); margin: 0 14px 14px;
+    padding: 9px; background: var(--bg-card);
+    border: 1.5px solid var(--border); border-radius: 8px;
+    font-size: 12px; color: var(--wrong); font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif; cursor: pointer;
+  }
+
+  /* ═══════════════════════════════
+     TOP SELECT SCREEN
+  ═══════════════════════════════ */
+  #top-select {
+    padding-top: 40px;
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+  .top-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 20px; font-weight: 700; color: var(--navy);
+    text-align: center; letter-spacing: 0.06em;
+  }
+  .top-title span { color: var(--accent); }
+  .top-subtitle { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: -12px; }
+  .deck-cards {
+    display: flex; flex-direction: column; gap: 16px; width: 100%;
+  }
+  .deck-card {
+    background: var(--bg-card); border: 2px solid var(--border);
+    border-radius: 16px; padding: 24px 22px;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 2px 10px rgba(26,39,68,0.07);
+    display: flex; align-items: center; gap: 18px;
+  }
+  .deck-card:hover {
+    border-color: var(--blue-mid); transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(42,80,160,0.18);
+  }
+  .deck-icon {
+    width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .deck-icon.icon1 { background: linear-gradient(135deg,#eef3fb,#d0dcf5); }
+  .deck-icon.icon2 { background: linear-gradient(135deg,#fff3e0,#ffd9a0); }
+  .deck-icon.icon3 { background: linear-gradient(135deg,#f0fff4,#a8e6bc); }
+  .deck-icon.icon4 { background: linear-gradient(135deg,#fdf0ff,#e0b0f0); }
+  .deck-info { flex: 1; }
+  .deck-name {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 4px;
+  }
+  .deck-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+  .deck-count {
+    font-size: 13px; font-weight: 700; color: var(--blue-mid);
+    background: #eef3fb; border: 1px solid rgba(58,95,168,0.2);
+    border-radius: 20px; padding: 3px 12px; flex-shrink: 0;
+  }
+
+  /* ═══════════════════════════════
+     MOBILE RESPONSIVE
+  ═══════════════════════════════ */
+  @media (max-width: 600px) {
+    :root { --header-h: 52px; }
+    .header { padding: 0 12px; }
+    .header-title { font-size: 14px; }
+    .header-progress-wrap { display: none; }
+    #app { padding-left: 14px; padding-right: 14px; }
+    #quiz-area { padding-top: 18px; }
+    .mode-btn { font-size: 12px; padding: 8px 6px; min-width: 60px; }
+    .card { padding: 18px 16px; }
+    .question-text { font-size: 14px; }
+    .choice-btn { font-size: 13.5px; padding: 11px 13px; }
+    .score-big { font-size: 52px; }
+    .stats { gap: 8px; }
+    .stat-num { font-size: 20px; }
+    .result-hero { padding: 28px 20px; }
+  }
+  @media (max-width: 375px) {
+    .mode-row { gap: 5px; }
+    .mode-btn { font-size: 11px; padding: 7px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="header">
+  <button class="header-back" id="header-back" onclick="confirmGoTop()" style="display:none" title="トップへ戻る">&#8592;</button>
+  <div class="header-title" id="header-title">社会 <span>フラッシュカード</span></div>
+  <div class="header-right">
+    <button class="header-save-btn" id="header-save-btn" onclick="saveProgress()" style="display:none" title="一時保存">💾</button>
+    <div class="header-progress-wrap">
+      <div class="header-progress-bar" id="header-prog"></div>
+    </div>
+    <div class="header-counter" id="counter">1 / 62</div>
+  </div>
+</header>
+
+<div id="app">
+
+  <!-- ═══ TOP SELECT ═══ -->
+  <div id="top-select">
+    <div class="top-title">社会 <span>フラッシュカード</span></div>
+    <p class="top-subtitle">挑戦するテストセットを選んでください</p>
+
+    <!-- 保存データがある場合に表示 -->
+    <div id="resume-card" class="deck-card resume-card" onclick="resumeProgress()" style="display:none">
+      <div class="deck-icon" style="background:linear-gradient(135deg,#e8f5ee,#a8dfc0);">▶️</div>
+      <div class="deck-info">
+        <div class="deck-name" id="resume-title">続きから再開</div>
+        <div class="deck-desc" id="resume-desc"></div>
+      </div>
+      <div class="deck-count" style="background:#e8f5ee;border-color:rgba(30,125,75,0.2);color:#1e7d4b;">再開</div>
+    </div>
+
+    <div class="deck-cards">
+      <div class="deck-card" onclick="selectDeck(1)">
+        <div class="deck-icon icon1">📘</div>
+        <div class="deck-info">
+          <div class="deck-name">月例テスト対策①</div>
+          <div class="deck-desc">地理・地図記号・縮尺計算<br>（地理分野 全62問）</div>
+        </div>
+        <div class="deck-count">62問</div>
+      </div>
+      <div class="deck-card" onclick="selectDeck(2)">
+        <div class="deck-icon icon2">📙</div>
+        <div class="deck-info">
+          <div class="deck-name">月例テスト対策②</div>
+          <div class="deck-desc">日本史 古代〜現代<br>（歴史分野 全50問）</div>
+        </div>
+        <div class="deck-count">50問</div>
+      </div>
+      <div class="deck-card" onclick="selectDeck(3)">
+        <div class="deck-icon icon3">📗</div>
+        <div class="deck-info">
+          <div class="deck-name">月例テスト対策③</div>
+          <div class="deck-desc">地理・世界地理・産業・貿易<br>（総合回 全50問）</div>
+        </div>
+        <div class="deck-count">50問</div>
+      </div>
+      <div class="deck-card" onclick="selectDeck(4)">
+        <div class="deck-icon icon4">📔</div>
+        <div class="deck-info">
+          <div class="deck-name">月例テスト対策④</div>
+          <div class="deck-desc">地形・気候・森林・世界遺産<br>（総合回 全50問）</div>
+        </div>
+        <div class="deck-count">50問</div>
+      </div>
+    </div>
+
+    <!-- ─ 分野別正答率パネル ─ -->
+    <div class="top-panel" id="top-cat-panel" style="display:none">
+      <div class="top-panel-header">
+        <span class="top-panel-icon">📊</span>
+        <span class="top-panel-title">分野別正答率</span>
+        <div class="top-panel-tabs" id="cat-deck-tabs">
+          <button class="top-tab active" onclick="switchCatDeck(1)" id="ctab-1">対策①</button>
+          <button class="top-tab" onclick="switchCatDeck(2)" id="ctab-2">対策②</button>
+          <button class="top-tab" onclick="switchCatDeck(3)" id="ctab-3">対策③</button>
+          <button class="top-tab" onclick="switchCatDeck(4)" id="ctab-4">対策④</button>
+        </div>
+      </div>
+      <div id="top-cat-body"></div>
+    </div>
+
+    <!-- ─ ランキングパネル ─ -->
+    <div class="top-panel" id="top-rank-panel" style="display:none">
+      <div class="top-panel-header">
+        <span class="top-panel-icon">🏆</span>
+        <span class="top-panel-title">ランキング</span>
+        <div class="top-panel-tabs">
+          <button class="top-tab active" onclick="switchTopRankTab('normal')" id="rtop-normal">通常</button>
+          <button class="top-tab" onclick="switchTopRankTab('time')" id="rtop-time">タイム</button>
+          <button class="top-tab" onclick="switchTopRankTab('exam')" id="rtop-exam">本番</button>
+        </div>
+      </div>
+      <div class="top-panel-tabs2" id="rank-deck-tabs">
+        <button class="top-tab2 active" onclick="switchRankDeck(0)" id="rdtab-0">すべて</button>
+        <button class="top-tab2" onclick="switchRankDeck(1)" id="rdtab-1">対策①</button>
+        <button class="top-tab2" onclick="switchRankDeck(2)" id="rdtab-2">対策②</button>
+        <button class="top-tab2" onclick="switchRankDeck(3)" id="rdtab-3">対策③</button>
+        <button class="top-tab2" onclick="switchRankDeck(4)" id="rdtab-4">対策④</button>
+      </div>
+      <div id="top-rank-body"></div>
+      <button class="top-panel-clear" onclick="clearRankingTop()">ランキングをリセット</button>
+    </div>
+
+  </div>
+
+  <!-- ═══ QUIZ AREA ═══ -->
+  <div id="quiz-area" style="display:none">
+    <!-- モード選択 -->
+    <div class="mode-row">
+      <button class="mode-btn active" onclick="setMode('all')" id="m-all">全問</button>
+      <button class="mode-btn" onclick="setMode('geo')" id="m-geo">地理</button>
+      <button class="mode-btn" onclick="setMode('map')" id="m-map">地図記号</button>
+      <button class="mode-btn" onclick="setMode('wrong')" id="m-wrong">間違え</button>
+      <button class="mode-btn" onclick="setMode('time')" id="m-time">⏱ タイム</button>
+      <button class="mode-btn exam-btn" onclick="setMode('exam')" id="m-exam">📝 本番</button>
+    </div>
+
+    <!-- タイマー -->
+    <div class="timer-bar" id="timer-bar" style="display:none">
+      <div class="timer-circle" id="timer-circle">
+        <svg width="48" height="48" viewBox="0 0 48 48">
+          <circle class="timer-bg" cx="24" cy="24" r="20"/>
+          <circle class="timer-fg" id="timer-fg" cx="24" cy="24" r="20" stroke-dasharray="125.66" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-num" id="timer-num">15</div>
+      </div>
+      <div class="timer-label">残り時間</div>
+      <div class="timer-score">⭐ ボーナス: <span id="bonus-pts">0</span>pt</div>
+    </div>
+
+    <!-- 統計 -->
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="s-remaining">62</div><div class="stat-label">残り</div></div>
+      <div class="stat correct"><div class="stat-num" id="s-correct">0</div><div class="stat-label">正解</div></div>
+      <div class="stat wrong"><div class="stat-num" id="s-wrong">0</div><div class="stat-label">不正解</div></div>
+    </div>
+
+    <!-- 問題カード -->
+    <div class="card">
+      <div class="q-num" id="q-num">QUESTION 01</div>
+      <span class="category-badge" id="cat-badge">地理</span>
+      <div class="q-row">
+        <div class="question-text" id="q-text"></div>
+        <div class="map-symbol" id="map-symbol" style="display:none"></div>
+      </div>
+      <div class="choices" id="choices"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="explanation" id="explanation"></div>
+      <button class="btn-next" id="btn-next" onclick="nextCard()">次の問題 →</button>
+    </div>
+  </div>
+
+  <!-- ═══ RESULTS ═══ -->
+  <div id="results" class="results">
+    <div class="result-hero">
+      <h2>結果発表</h2>
+      <div id="exam-mode-badge" style="display:none"><span class="exam-badge">📝 本番モード</span></div>
+      <div class="score-big" id="final-score"></div>
+      <div class="score-msg" id="final-msg"></div>
+      <div class="result-time" id="result-time-row" style="display:none"></div>
+    </div>
+    <div class="result-stats-row">
+      <div class="result-stat correct"><div class="stat-num" id="r-correct"></div><div class="stat-label">正解</div></div>
+      <div class="result-stat wrong"><div class="stat-num" id="r-wrong"></div><div class="stat-label">不正解</div></div>
+    </div>
+    <div class="cat-breakdown" id="cat-breakdown"></div>
+    <div class="result-btns">
+      <button class="btn-restart" onclick="restart()">もう一度挑戦</button>
+      <button class="btn-review" onclick="reviewWrong()">間違えた問題を復習</button>
+      <button class="btn-top" onclick="goTop()">🏠 トップへ戻る</button>
+      <button class="btn-ranking" onclick="openRanking()">🏆 ランキングを見る</button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- 一時保存トースト -->
+<div id="save-toast">💾 進捗を保存しました</div>
+
+<!-- ═══ ランキングモーダル ═══ -->
+<div class="modal-overlay" id="ranking-modal" onclick="if(event.target===this)closeRanking()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>🏆 ランキング</h2>
+      <button class="modal-close" onclick="closeRanking()">×</button>
+    </div>
+    <div class="rank-tab-row">
+      <button class="rank-tab active" onclick="switchRankTab('time')" id="rtab-time">⏱ タイムアタック</button>
+      <button class="rank-tab" onclick="switchRankTab('normal')" id="rtab-normal">📝 通常モード</button>
+      <button class="rank-tab" onclick="switchRankTab('exam')" id="rtab-exam" data-mode="exam">🏫 本番モード</button>
+    </div>
+    <div id="rank-list-area" class="rank-list"></div>
+    <button class="rank-clear-btn" onclick="clearRanking()">ランキングをリセット</button>
+  </div>
+</div>
+
+<!-- ═══ 名前入力モーダル ═══ -->
+<div class="name-modal" id="name-modal">
+  <div class="name-box">
+    <h3>🎉 結果を記録しますか？</h3>
+    <p id="name-score-preview"></p>
+    <input class="name-input" id="name-input" type="text" maxlength="12" placeholder="名前を入力（最大12文字）">
+    <div class="name-btns">
+      <button class="name-btn-skip" onclick="skipSave()">スキップ</button>
+      <button class="name-btn-ok" onclick="saveScore()">記録する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const MAP_SYMBOLS = {
+  "田":         "Japanese_Map_symbol_(Rice_field).svg",
+  "畑":         "Japanese_Map_symbol_(Field).svg",
+  "果樹園":     "Japanese_Map_symbol_(Orchard).svg",
+  "茶畑":       "Japanese_Map_symbol_(Tea_plantation).svg",
+  "針葉樹林":   "Japanese_Map_symbol_(Coniferous_trees).svg",
+  "広葉樹林":   "Japanese_Map_symbol_(Broadleaf_trees).svg",
+  "竹林":       "Japanese_Map_symbol_(Bamboo_grove).svg",
+  "荒地":       "Japanese_Map_symbol_(Barren_land).svg",
+  "市役所":     "Japanese_Map_symbol_(City_Hall).svg",
+  "町村役場":   "Japanese_Map_symbol_(Town_or_Village_Office).svg",
+  "裁判所":     "Japanese_Map_symbol_(Court_of_law).svg",
+  "警察署":     "Japanese_Map_symbol_(Police_station).svg",
+  "消防署":     "Japanese_Map_symbol_(Fire_station).svg",
+  "郵便局":     "Japanese_Map_symbol_(Post_office).svg",
+  "病院":       "Japanese_Map_symbol_(Hospital).svg",
+  "神社":       "Japanese_Map_symbol_(Shrine).svg",
+  "寺院":       "Japanese_Map_symbol_(Temple).svg",
+  "小・中学校": "Japanese_Map_symbol_(Elementary_or_Junior_high_school).svg",
+  "高等学校":   "Japanese_Map_symbol_(High_school).svg",
+  "老人ホーム": "Japanese_Map_symbol_(Home_for_the_aged).svg",
+  "図書館":     "Japanese_Map_symbol_(Library).svg",
+  "工場":       "Japanese_Map_symbol_(Factory).svg",
+  "自然災害伝承碑": "Natural_Disaster_Monument.png"
+};
+
+const EXPLANATIONS = {
+  "釧路湿原":{text:"釧路湿原は北海道東部に広がる日本最大の湿原で，1980年にラムサール条約登録地，1987年に国立公園に指定されました。タンチョウなど希少生物の生息地です。",url:"https://www.env.go.jp/nature/npdb/npdb.html"},
+  "ねぶた・竿燈・七夕":{text:"東北三大祭りは，青森のねぶた祭（8月上旬），秋田の竿燈まつり（8月上旬），仙台の七夕まつり（8月上旬）です。いずれも100万人超の観客が訪れる大規模祭事です。",url:"https://www.tohokukanko.jp/"},
+  "大潟村":{text:"大潟村は旧八郎潟を干拓して1964年に誕生した村。干拓面積は約17,000haで，日本第2位の湖が農地に転換されました。現在は米の主産地です。",url:"https://www.vill.ogata.akita.jp/"},
+  "猪苗代湖":{text:"猪苗代湖は福島県中央部にある面積約103㎢の湖で，琵琶湖・霞ヶ浦・サロマ湖に次ぐ日本第4位の面積を誇ります。透明度が高く「天鏡湖」とも呼ばれます。",url:"https://www.tif.ne.jp/"},
+  "群馬県":{text:"群馬県はこんにゃくいもの生産量が全国の約90%を占める圧倒的な産地。下仁田・甘楽地区が主産地で，火山灰土壌と昼夜の寒暖差がこんにゃく栽培に適しています。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_yasai/"},
+  "さいたま市":{text:"さいたま市は2001年に浦和市・大宮市・与野市が合併して誕生。2003年に政令指定都市に移行し，2005年に岩槻市も編入。人口は約134万人（2023年）です。",url:"https://www.city.saitama.jp/"},
+  "らっかせい":{text:"千葉県は落花生の生産量が全国1位で，全国シェアの約80%を占めます（農林水産省作物統計）。八街市が主産地として知られています。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_yasai/"},
+  "甲府市":{text:"甲府市は山梨県の県庁所在地。甲府盆地の中央に位置し，ぶどう・桃などの果樹栽培が盛んです。「甲府」の名は甲斐国の府中に由来します。",url:"https://www.city.kofu.yamanashi.jp/"},
+  "美濃和紙":{text:"美濃和紙は岐阜県美濃市を中心に1,300年以上の歴史を持つ手漉き和紙。2014年にユネスコ無形文化遺産「和紙：日本の手漉和紙技術」として登録されました。",url:"https://www.city.mino.gifu.jp/"},
+  "輪島塗・九谷焼":{text:"輪島塗は石川県輪島市の伝統漆器で，国の重要無形文化財。九谷焼は石川県南部を産地とする色絵磁器で，「九谷五彩」と呼ばれる鮮やかな絵付けが特徴です。",url:"https://www.meti.go.jp/policy/mono_info_service/mono/nichiyo-densan/"},
+  "茶":{text:"静岡県の茶の生産量は全国1位で，全国シェアの約40%（農林水産省作物統計）。富士山麓や牧之原台地が主産地。「静岡茶」は宇治茶・狭山茶と並ぶ日本三大茶の一つです。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_tokusan/"},
+  "りんご":{text:"長野県のりんご生産量は青森県に次いで全国2位（農林水産省作物統計）。高原の涼しい気候を活かし，「ふじ」「シナノゴールド」など多品種を生産しています。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_tokusan/"},
+  "奥羽山脈":{text:"奥羽山脈は青森県から栃木県まで南北約500kmにわたる日本最長の山脈。東北地方を太平洋側と日本海側に分ける「東北の背骨」と呼ばれ，最高峰は岩手山（2,038m）です。",url:"https://www.gsi.go.jp/"},
+  "古都奈良の文化財":{text:"「古都奈良の文化財」は1998年にユネスコ世界遺産登録。東大寺・興福寺・春日大社・春日山原始林・元興寺・薬師寺・唐招提寺・平城宮跡の8資産を含みます。",url:"https://whc.unesco.org/en/list/870"},
+  "法隆寺地域の仏教建造物":{text:"法隆寺は607年創建とされる世界最古の木造建築群。1993年に日本初のユネスコ世界文化遺産に登録されました。法隆寺と法起寺の2寺院が対象です。",url:"https://whc.unesco.org/en/list/660"},
+  "紀伊山地の霊場と参詣道":{text:"2004年にユネスコ世界遺産登録。吉野・大峯，熊野三山，高野山の三つの霊場と，それらを結ぶ参詣道（熊野古道など）が対象。奈良・和歌山・三重の3県にまたがります。",url:"https://whc.unesco.org/en/list/1142"},
+  "琵琶湖":{text:"琵琶湖は日本最大の淡水湖で面積約670㎢，周囲約235km（滋賀県面積の約1/6）。約400万年前に形成された世界有数の古代湖で，固有種が多く生息します。",url:"https://www.pref.shiga.lg.jp/ippan/kankyoshizen/biwako/"},
+  "阿蘇山":{text:"阿蘇山のカルデラは東西約18km・南北約25km・周囲約128kmで世界最大級。カルデラ内には約5万人が居住し，農業も営まれています。現在も活発な火山活動が続いています。",url:"https://www.data.jma.go.jp/svd/vois/data/fukuoka/505_Asosan/505_index.html"},
+  "約70％":{text:"在日米軍専用施設面積の約70.3%が沖縄県に集中しています（防衛省調査）。沖縄県は国土面積の約0.6%に過ぎないにもかかわらず，基地の大部分が集中している状況です。",url:"https://www.mod.go.jp/j/approach/zaibeigun/us_base/"},
+  "のり（海苔）":{text:"有明海は干満差が最大6mにも達する日本最大の干潟を持つ内湾で，養殖ノリの生産量は全国1位。全国シェアの約40%（農林水産省漁業・養殖業生産統計）を占めます。",url:"https://www.maff.go.jp/j/tokei/kouhyou/kaimen_gyosei/"},
+  "原爆ドーム":{text:"原爆ドームは1945年8月6日の原爆投下による惨禍を伝える建造物。1996年にユネスコ世界文化遺産に登録。核兵器廃絶と世界平和を訴えるシンボルとして保存されています。",url:"https://whc.unesco.org/en/list/775"},
+  "厳島神社":{text:"厳島神社は広島県廿日市市の宮島に建つ神社。海上に浮かぶ朱塗りの大鳥居と社殿が「安芸の宮島」として知られ，1996年に世界文化遺産に登録されました。",url:"https://whc.unesco.org/en/list/775"},
+  "石見銀山遺跡":{text:"島根県大田市の石見銀山は16〜17世紀に世界最大級の銀産出量を誇り，当時の世界流通銀の約3分の1を産出したとも言われます。2007年に世界文化遺産に登録されました。",url:"https://whc.unesco.org/en/list/1246"},
+  "香川県":{text:"香川県の面積は約1,876㎢で全都道府県中最小（国土地理院）。「うどん県」として知られ，さぬきうどんの消費量・生産量ともに全国トップクラスです。",url:"https://www.gsi.go.jp/KOKUJYOHO/MENCHO/"},
+  "鳥取県":{text:"鳥取県の人口は約54万人（2023年推計）で全都道府県中最少（総務省統計局）。一方で，砂丘や大山など豊かな自然観光資源を有します。",url:"https://www.stat.go.jp/data/jinsui/"},
+  "瀬戸大橋":{text:"瀬戸大橋は岡山県倉敷市児島と香川県坂出市を結ぶ本州四国連絡橋。全長約13.1km，1988年に開通。鉄道・道路の併用橋としては世界最大級です。",url:"https://www.jb-honshi.co.jp/"},
+  "ロシア":{text:"ロシア連邦の面積は約1,710万㎢で世界最大（国連統計）。日本の約45倍に相当し，11のタイムゾーンにまたがります。",url:"https://unstats.un.org/unsd/demographic-social/products/dyb/"},
+  "択捉島":{text:"択捉島は北緯45度33分，東経148度45分に位置する日本最北端の島。面積約3,183㎢で日本最大の島（本州・北海道・九州・四国を除く）。現在はロシアが実効支配しています。",url:"https://www.gsi.go.jp/kohokocho/kohokocho40003.html"},
+  "南鳥島":{text:"南鳥島は東経153度59分に位置する日本最東端の島。東京都小笠原村に属し，気象庁・海上自衛隊の施設があります。環礁（サンゴ礁）でできた平坦な島です。",url:"https://www.gsi.go.jp/kohokocho/kohokocho40003.html"},
+  "沖ノ鳥島":{text:"沖ノ鳥島は北緯20度25分に位置する日本最南端の島。東京都小笠原村に属し，満潮時には2つの岩礁のみが海面に出る非常に小さな島です。EEZ（排他的経済水域）の基点として重要です。",url:"https://www.gsi.go.jp/kohokocho/kohokocho40003.html"},
+  "与那国島":{text:"与那国島は東経122度56分に位置する日本最西端の島。沖縄県八重山郡与那国町に属し，晴れた日には台湾（約111km先）を望めます。人口は約1,700人。",url:"https://www.gsi.go.jp/kohokocho/kohokocho40003.html"},
+  "12カイリ":{text:"領海とは沿岸基線から12海里（約22.2km）以内の海域。国連海洋法条約（UNCLOS）第3条に規定されています。なお，排他的経済水域（EEZ）は200海里です。",url:"https://www.mofa.go.jp/mofaj/gaiko/kaiyo/kekkai.html"},
+  "尖閣諸島":{text:"尖閣諸島は沖縄県石垣市に属する日本固有の領土。日本政府は「解決すべき領有権問題は存在しない」との立場ですが，中国・台湾が領有権を主張しています。",url:"https://www.mofa.go.jp/mofaj/area/senkaku/"},
+  "竹島":{text:"竹島は島根県隠岐の島町に属する日本固有の領土ですが，韓国が実効支配しています。日本政府は外交交渉による平和的解決を目指す立場を取っています。",url:"https://www.mofa.go.jp/mofaj/area/takeshima/"},
+  "過密":{text:"過密とは人口や建物・施設などが一定地域に集中しすぎている状態。交通渋滞・住宅不足・地価高騰・環境悪化などの問題が生じます。反対に人口が少なすぎる状態は「過疎」といいます。",url:"https://www.stat.go.jp/data/jinsui/"},
+  "約29％":{text:"日本の65歳以上の高齢者人口は総人口の約29.1%（2023年推計，総務省統計局）。世界で最も高い高齢化率であり，少子高齢化対策が急務となっています。",url:"https://www.stat.go.jp/data/jinsui/"},
+  "750m":{text:"縮尺25,000分の1の地図上での3cmは，実際には3×25,000=75,000cm＝750mです。縮尺の計算は「地図上の長さ×分母」で実際の距離が求まります。",url:"https://www.gsi.go.jp/"},
+  "1.5km":{text:"縮尺50,000分の1の地図上での3cmは，3×50,000=150,000cm＝1,500m＝1.5kmです。",url:"https://www.gsi.go.jp/"},
+  "0.25㎢":{text:"縮尺25,000分の1の地図上で1辺2cmの正方形は，実際の1辺が2×25,000＝50,000cm＝500m。面積は500×500=250,000㎡＝0.25㎢となります。",url:"https://www.gsi.go.jp/"}
+};
+
+const TRICKY_WRONG = {
+  "市役所":["町村役場","警察署","裁判所"],
+  "町村役場":["市役所","警察署","病院"],
+  "裁判所":["警察署","市役所","町村役場"],
+  "警察署":["消防署","市役所","裁判所"],
+  "消防署":["警察署","病院","郵便局"],
+  "郵便局":["消防署","病院","警察署"],
+  "病院":["郵便局","老人ホーム","消防署"],
+  "神社":["寺院","病院","郵便局"],
+  "寺院":["神社","警察署","消防署"],
+  "小・中学校":["高等学校","図書館","老人ホーム"],
+  "高等学校":["小・中学校","図書館","市役所"],
+  "老人ホーム":["病院","図書館","小・中学校"],
+  "図書館":["老人ホーム","高等学校","工場"],
+  "工場":["消防署","病院","図書館"],
+  "自然災害伝承碑":["寺院","神社","裁判所"],
+  "釧路湿原":["十和田湖","尾瀬湿原","霧多布湿原"],
+  "ねぶた・竿燈・七夕":["ねぶた・竿燈・花笠","ねぶた・七夕・山形花笠","よさこい・竿燈・七夕"],
+  "大潟村":["鶴岡市","潟上市","男鹿市"],
+  "猪苗代湖":["十和田湖","田沢湖","小川原湖"],
+  "群馬県":["栃木県","茨城県","長野県"],
+  "さいたま市":["川口市","越谷市","川越市"],
+  "らっかせい":["さつまいも","だいこん","ほうれんそう"],
+  "甲府市":["松本市","長野市","塩尻市"],
+  "美濃和紙":["越前和紙","土佐和紙","西の内紙"],
+  "輪島塗・九谷焼":["輪島塗・有田焼","山中塗・九谷焼","輪島塗・信楽焼"],
+  "茶":["みかん","いちご","キャベツ"],
+  "りんご":["なし","もも","ぶどう"],
+  "奥羽山脈":["越後山脈","出羽山地","北上高地"],
+  "古都奈良の文化財":["古都京都の文化財","白川郷・五箇山","姫路城"],
+  "法隆寺地域の仏教建造物":["東大寺","興福寺","薬師寺"],
+  "紀伊山地の霊場と参詣道":["熊野古道","高野山","吉野山"],
+  "琵琶湖":["霞ヶ浦","サロマ湖","浜名湖"],
+  "阿蘇山":["桜島","雲仙岳","浅間山"],
+  "約70％":["約50％","約60％","約80％"],
+  "のり（海苔）":["かき（牡蠣）","はまぐり","あさり"],
+  "原爆ドーム":["広島城","縮景園","平和記念公園"],
+  "厳島神社":["金刀比羅宮","住吉大社","春日大社"],
+  "石見銀山遺跡":["佐渡金山","生野銀山","別子銅山"],
+  "香川県":["大阪府","東京都","沖縄県"],
+  "鳥取県":["島根県","福井県","徳島県"],
+  "瀬戸大橋":["明石海峡大橋","来島海峡大橋","しまなみ海道"],
+  "ロシア":["カナダ","アメリカ","中国"],
+  "択捉島":["国後島","北方四島","色丹島"],
+  "南鳥島":["沖ノ鳥島","与那国島","硫黄島"],
+  "沖ノ鳥島":["南鳥島","与那国島","西之島"],
+  "与那国島":["石垣島","宮古島","西表島"],
+  "12カイリ":["3カイリ","24カイリ","200カイリ"],
+  "尖閣諸島":["竹島","北方四島","対馬"],
+  "竹島":["尖閣諸島","北方四島","対馬"],
+  "過密":["過疎","人口減少","少子化"],
+  "約29％":["約20％","約25％","約35％"],
+  "750m":["500m","1000m","250m"],
+  "1.5km":["1km","3km","0.75km"],
+  "0.25㎢":["0.5㎢","1㎢","0.1㎢"]
+};
+
+const ALL_QA = [
+  {q:"北海道にあり，国立公園にもなっている場所の名を答えなさい。",a:"釧路湿原",cat:"地理"},
+  {q:"東北三大祭りをすべて答えなさい。",a:"ねぶた・竿燈・七夕",cat:"地理"},
+  {q:"秋田県にあり，八郎潟の干拓によって生まれた村の名を漢字で答えなさい。",a:"大潟村",cat:"地理"},
+  {q:"福島県にあり，日本で4番目に広い湖の名を漢字で答えなさい。",a:"猪苗代湖",cat:"地理"},
+  {q:"こんにゃくいもの生産量が日本一の都道府県を漢字で答えなさい。",a:"群馬県",cat:"地理"},
+  {q:"浦和市や大宮市などが合併してできた都市の名を答えなさい。",a:"さいたま市",cat:"地理"},
+  {q:"千葉県で日本一の生産量をあげている作物の名を答えなさい。",a:"らっかせい",cat:"地理"},
+  {q:"山梨県の県庁所在地を漢字で答えなさい。",a:"甲府市",cat:"地理"},
+  {q:"岐阜県の伝統工芸品の名を答えなさい。",a:"美濃和紙",cat:"地理"},
+  {q:"石川県の伝統的工芸品の名を二つ答えなさい。",a:"輪島塗・九谷焼",cat:"地理"},
+  {q:"静岡県が全国の約4割を生産している農作物の名を答えなさい。",a:"茶",cat:"地理"},
+  {q:"長野県で栽培されている，青森県に次いで全国2位の生産量をあげているくだものの名を答えなさい。",a:"りんご",cat:"地理"},
+  {q:"「東北の背骨」とよばれる，南北に長く続く山脈の名を答えなさい。",a:"奥羽山脈",cat:"地理"},
+  {q:"奈良県にある三つの世界遺産の名を答えなさい（その1）。",a:"古都奈良の文化財",cat:"地理"},
+  {q:"奈良県にある三つの世界遺産の名を答えなさい（その2）。",a:"法隆寺地域の仏教建造物",cat:"地理"},
+  {q:"奈良県にある三つの世界遺産の名を答えなさい（その3）。",a:"紀伊山地の霊場と参詣道",cat:"地理"},
+  {q:"滋賀県にある日本最大の湖の名を答えなさい。",a:"琵琶湖",cat:"地理"},
+  {q:"熊本県にある，火口がくぼんでできた広大なカルデラのある山を何といいますか。",a:"阿蘇山",cat:"地理"},
+  {q:"沖縄県には，日本国内のアメリカ軍基地の約何％がおかれていますか。",a:"約70％",cat:"地理"},
+  {q:"有明海でさかんな養殖の名を答えなさい。",a:"のり（海苔）",cat:"地理"},
+  {q:"広島県にある二つの世界遺産の名を答えなさい（その1）。",a:"原爆ドーム",cat:"地理"},
+  {q:"広島県にある二つの世界遺産の名を答えなさい（その2）。",a:"厳島神社",cat:"地理"},
+  {q:"島根県にある世界遺産の名を答えなさい。",a:"石見銀山遺跡",cat:"地理"},
+  {q:"全国で最も面積が小さい県の名を漢字で答えなさい。",a:"香川県",cat:"地理"},
+  {q:"全国で最も人口が少ない県の名を漢字で答えなさい。",a:"鳥取県",cat:"地理"},
+  {q:"岡山県の倉敷市と香川県の坂出市が結ばれている本州四国連絡橋の名を答えなさい。",a:"瀬戸大橋",cat:"地理"},
+  {q:"世界一面積が大きい国はどこですか。",a:"ロシア",cat:"地理"},
+  {q:"日本の北の端に位置する島の名を答えなさい。",a:"択捉島",cat:"地理"},
+  {q:"日本の東の端に位置する島の名を答えなさい。",a:"南鳥島",cat:"地理"},
+  {q:"日本の南の端に位置する島の名を答えなさい。",a:"沖ノ鳥島",cat:"地理"},
+  {q:"日本の西の端に位置する島の名を答えなさい。",a:"与那国島",cat:"地理"},
+  {q:"沿岸から何カイリまでが，領海になりますか。",a:"12カイリ",cat:"地理"},
+  {q:"中国と領有権をめぐって争っている島の名を答えなさい。",a:"尖閣諸島",cat:"地理"},
+  {q:"韓国と領有権をめぐって争っている島の名を答えなさい。",a:"竹島",cat:"地理"},
+  {q:"人口や建物などが，ある地域に集中しすぎている状態を何といいますか。",a:"過密",cat:"地理"},
+  {q:"日本では，65歳以上の高齢者の人口は約何％ですか。",a:"約29％",cat:"地理"},
+  {q:"この地図記号は何を示していますか？（稲株を図案化，国土地理院）",a:"田",cat:"地図記号",sym:"田"},
+  {q:"この地図記号は何を示していますか？（植物の二葉を図案化，国土地理院）",a:"畑",cat:"地図記号",sym:"畑"},
+  {q:"この地図記号は何を示していますか？（果実を横から見た形を図案化，国土地理院）",a:"果樹園",cat:"地図記号",sym:"果樹園"},
+  {q:"この地図記号は何を示していますか？（茶の実の断面を図案化，国土地理院）",a:"茶畑",cat:"地図記号",sym:"茶畑"},
+  {q:"この地図記号は何を示していますか？（針葉樹〔杉〕を横から見た二段の三角形を図案化，国土地理院）",a:"針葉樹林",cat:"地図記号",sym:"針葉樹林"},
+  {q:"この地図記号は何を示していますか？（丸い樹冠＋幹の広葉樹を図案化，国土地理院）",a:"広葉樹林",cat:"地図記号",sym:"広葉樹林"},
+  {q:"この地図記号は何を示していますか？（竹が生えている様子と影を図案化，国土地理院）",a:"竹林",cat:"地図記号",sym:"竹林"},
+  {q:"この地図記号は何を示していますか？（草の芽3つ＋三角形を図案化，国土地理院）",a:"荒地",cat:"地図記号",sym:"荒地"},
+  {q:"この地図記号は何を示していますか？（二重丸，国土地理院）",a:"市役所",cat:"地図記号",sym:"市役所"},
+  {q:"この地図記号は何を示していますか？（一重丸，国土地理院）",a:"町村役場",cat:"地図記号",sym:"町村役場"},
+  {q:"この地図記号は何を示していますか？（三角形，立て札を図案化，国土地理院）",a:"裁判所",cat:"地図記号",sym:"裁判所"},
+  {q:"この地図記号は何を示していますか？（丸の中にX，交差した警棒を図案化，国土地理院）",a:"警察署",cat:"地図記号",sym:"警察署"},
+  {q:"この地図記号は何を示していますか？（十字＋斜め線の複合形，火消しの道具を図案化，国土地理院）",a:"消防署",cat:"地図記号",sym:"消防署"},
+  {q:"この地図記号は何を示していますか？（漢字の「〒」を図案化，国土地理院）",a:"郵便局",cat:"地図記号",sym:"郵便局"},
+  {q:"この地図記号は何を示していますか？（十字の形，旧陸軍衛生隊の印を図案化，国土地理院）",a:"病院",cat:"地図記号",sym:"病院"},
+  {q:"この地図記号は何を示していますか？（鳥居の形を図案化，国土地理院）",a:"神社",cat:"地図記号",sym:"神社"},
+  {q:"この地図記号は何を示していますか？（卍〔まんじ〕を図案化，国土地理院）",a:"寺院",cat:"地図記号",sym:"寺院"},
+  {q:"この地図記号は何を示していますか？（漢字の「文」を図案化，国土地理院）",a:"小・中学校",cat:"地図記号",sym:"小・中学校"},
+  {q:"この地図記号は何を示していますか？（漢字の「文」を円で囲んだ形，国土地理院）",a:"高等学校",cat:"地図記号",sym:"高等学校"},
+  {q:"この地図記号は何を示していますか？（杖をついた人を図案化，2006年追加，国土地理院）",a:"老人ホーム",cat:"地図記号",sym:"老人ホーム"},
+  {q:"この地図記号は何を示していますか？（開いた本を図案化，2002年追加，国土地理院）",a:"図書館",cat:"地図記号",sym:"図書館"},
+  {q:"この地図記号は何を示していますか？（煙突と煙を図案化，国土地理院）",a:"工場",cat:"地図記号",sym:"工場"},
+  {q:"この地図記号は何を示していますか？（石碑の形を図案化，2019年追加の最新記号，国土地理院）",a:"自然災害伝承碑",cat:"地図記号",sym:"自然災害伝承碑"},
+  {q:"縮尺25000分の1の地図の上で，3cmの長さがあった場合，実際の長さは何mですか。",a:"750m",cat:"縮尺計算"},
+  {q:"縮尺50000分の1の地図の上で，3cmの長さがあった場合，実際の長さは何kmですか。",a:"1.5km",cat:"縮尺計算"},
+  {q:"縮尺25000分の1の地図上で1辺が2cmの正方形の実際の面積は何㎢ですか。",a:"0.25㎢",cat:"縮尺計算"},
+];
+
+// ============================================================
+// テスト②問題データ（月例テスト対策② 日本史50問）
+// ============================================================
+const ALL_QA_2 = [
+  {q:"1467年に京都を戦場にして，11年間続いた戦いを何と呼びますか。",a:"応仁の乱",cat:"歴史②"},
+  {q:"織田信長が商工業を発展させるために行った政策を何と呼びますか。",a:"楽市・楽座",cat:"歴史②"},
+  {q:"足利義満が行った明との貿易（日明貿易）の別名は何ですか。",a:"勘合貿易",cat:"歴史②"},
+  {q:"慈照寺に建てられた銀閣に見られる建築様式を何といいますか。",a:"書院造",cat:"歴史②"},
+  {q:"一年のうちに米と麦の二つの作物を作る農法を何と呼びますか。",a:"二毛作",cat:"歴史②"},
+  {q:"建武の新政を行った天皇の名を答えなさい。",a:"後醍醐天皇",cat:"歴史②"},
+  {q:"承久の乱のあとで，京都に設置された役所の名を答えなさい。",a:"六波羅探題",cat:"歴史②"},
+  {q:"琵琶法師によって語り継がれた軍記物の名を答えなさい。",a:"平家物語",cat:"歴史②"},
+  {q:"鎌倉幕府を開いた人物の名を答えなさい。",a:"源頼朝",cat:"歴史②"},
+  {q:"代々北条氏がついていた，将軍を助ける役割を何といいますか。",a:"執権",cat:"歴史②"},
+  {q:"保元の乱と平治の乱で力を手に入れた武士の名を答えなさい。",a:"平清盛",cat:"歴史②"},
+  {q:"清少納言によって書かれた随筆の名を答えなさい。",a:"枕草子",cat:"歴史②"},
+  {q:"平安時代に，摂関政治を行い栄華を極めた貴族の名を答えなさい。",a:"藤原氏",cat:"歴史②"},
+  {q:"1086年に，白河天皇が上皇となり政治を始めたことを何といいますか。",a:"院政",cat:"歴史②"},
+  {q:"東大寺の大仏建設を命じた天皇の名を答えなさい。",a:"聖武天皇",cat:"歴史②"},
+  {q:"唐から日本へ来た，高僧で唐招提寺を建てた僧の名を答えなさい。",a:"鑑真",cat:"歴史②"},
+  {q:"645年に起こった政治改革の名を答えなさい。",a:"大化の改新",cat:"歴史②"},
+  {q:"すべての土地・人は天皇のものだという方針を漢字四字で答えなさい。",a:"公地公民",cat:"歴史②"},
+  {q:"後に天皇と呼ばれた，古墳時代の権力者のことを何といいますか。",a:"大王",cat:"歴史②"},
+  {q:"現在国宝にもなっている，世界最古の木造建築の寺の名を答えなさい。",a:"法隆寺",cat:"歴史②"},
+  {q:"卑弥呼が治めていたとされている国の名を答えなさい。",a:"邪馬台国",cat:"歴史②"},
+  {q:"中国・朝鮮から日本に技術を伝えるためにわたってきた人びとを何といいますか。",a:"渡来人",cat:"歴史②"},
+  {q:"縄文時代の人々の住まいを何といいますか。",a:"竪穴住居",cat:"歴史②"},
+  {q:"稲を収穫し，保管しておく建物の名を何といいますか。",a:"高床倉庫",cat:"歴史②"},
+  {q:"縄文時代を代表する遺跡で，青森県にある遺跡の名を答えなさい。",a:"三内丸山遺跡",cat:"歴史②"},
+  {q:"1950年代半ばから始まる急激な日本の経済成長を何と呼びますか。",a:"高度経済成長（期）",cat:"歴史②"},
+  {q:"高度経済成長の終わりのきっかけとなった出来事を何と呼びますか。",a:"石油危機（オイルショック）",cat:"歴史②"},
+  {q:"アメリカとソ連の戦火を交えない戦いを何といいますか。",a:"冷戦",cat:"歴史②"},
+  {q:"1951年にアメリカをはじめとする48カ国と結んだ平和条約を何といいますか。",a:"サンフランシスコ平和条約",cat:"歴史②"},
+  {q:"1947年に教育勅語にかわって定められた法律を何といいますか。",a:"教育基本法",cat:"歴史②"},
+  {q:"第二次世界大戦終了後に世界平和を守るために作られた組織を何といいますか。",a:"国際連合",cat:"歴史②"},
+  {q:"原爆が投下された都市を二つ答えなさい。",a:"長崎・広島",cat:"歴史②"},
+  {q:"日本軍の敗戦が決定した，無条件降伏の宣言を何といいますか。",a:"ポツダム宣言",cat:"歴史②"},
+  {q:"1929年にアメリカから始まった世界的な不景気を何といいますか。",a:"世界恐慌",cat:"歴史②"},
+  {q:"1938年に国民を戦争に動員するために作られた法律を何といいますか。",a:"国家総動員法",cat:"歴史②"},
+  {q:"社会主義者を取り締まるために1925年に成立した法律を何といいますか。",a:"治安維持法",cat:"歴史②"},
+  {q:"差別に苦しんできた人々が1922年に創立した組織の名を答えなさい。",a:"全国水平社",cat:"歴史②"},
+  {q:"小村寿太郎を代表者とした，日露戦争の講和条約を答えなさい。",a:"ポーツマス条約",cat:"歴史②"},
+  {q:"足尾銅山の鉱毒を訴えた政治家の名を答えなさい。",a:"田中正造",cat:"歴史②"},
+  {q:"明治時代のスローガンを二つ答えなさい。",a:"富国強兵・殖産興業",cat:"歴史②"},
+  {q:"初代内閣総理大臣の名を答えなさい。",a:"伊藤博文",cat:"歴史②"},
+  {q:"江戸時代の絵画で，ヨーロッパの絵画にも影響を与えたものの名を答えなさい。",a:"浮世絵",cat:"歴史②"},
+  {q:"1867年に政権を朝廷に返したことを何と呼びますか。",a:"大政奉還",cat:"歴史②"},
+  {q:"江戸時代に作られた，同業者の集まりを何といいますか。",a:"株仲間",cat:"歴史②"},
+  {q:"江戸の三大改革のうち，徳川吉宗が行ったものの名を答えなさい。",a:"享保の改革",cat:"歴史②"},
+  {q:"年貢を確実にとったり，犯罪の防止のための共同責任を負わせる制度を何といいますか。",a:"五人組",cat:"歴史②"},
+  {q:"江戸時代に開発された農具のうちで，脱穀をするためのものを答えなさい。",a:"千歯こき",cat:"歴史②"},
+  {q:"1615年に徳川秀忠によって作られた大名に対する法律の名を答えなさい。",a:"武家諸法度",cat:"歴史②"},
+  {q:"徳川家光が将軍のときに制定された，大名に江戸と領地を行き来させる政策を何と呼びますか。",a:"参勤交代",cat:"歴史②"},
+  {q:"豊臣秀吉が行った農民に対する政策を二つ答えなさい。",a:"刀狩（り）・（太閤）検地",cat:"歴史②"},
+];
+
+const TRICKY_WRONG_2 = {
+  "応仁の乱":["島原の乱","壬申の乱","承久の乱"],
+  "楽市・楽座":["検地・刀狩","参勤交代・武家諸法度","株仲間・五人組"],
+  "勘合貿易":["南蛮貿易","朱印船貿易","糸割符貿易"],
+  "書院造":["寝殿造","数寄屋造","校倉造"],
+  "二毛作":["二期作","輪作","混作"],
+  "後醍醐天皇":["聖武天皇","天智天皇","天武天皇"],
+  "六波羅探題":["鎌倉府","問注所","侍所"],
+  "平家物語":["源氏物語","枕草子","竹取物語"],
+  "源頼朝":["足利尊氏","北条時頼","平清盛"],
+  "執権":["管領","老中","大老"],
+  "平清盛":["源義朝","源頼義","藤原純友"],
+  "枕草子":["源氏物語","平家物語","徒然草"],
+  "藤原氏":["橘氏","菅原氏","蘇我氏"],
+  "院政":["摂関政治","律令政治","幕府政治"],
+  "聖武天皇":["天武天皇","天智天皇","推古天皇"],
+  "鑑真":["空海","最澄","行基"],
+  "大化の改新":["享保の改革","文明開化","明治維新"],
+  "公地公民":["班田収授","墾田永年私財","荘園"],
+  "大王":["天皇","将軍","関白"],
+  "法隆寺":["東大寺","唐招提寺","薬師寺"],
+  "邪馬台国":["大和朝廷","奴国","狗奴国"],
+  "渡来人":["遣唐使","遣隋使","遣明使"],
+  "竪穴住居":["高床倉庫","寝殿造","書院造"],
+  "高床倉庫":["竪穴住居","貝塚","環濠集落"],
+  "三内丸山遺跡":["吉野ヶ里遺跡","登呂遺跡","荒神谷遺跡"],
+  "高度経済成長（期）":["バブル景気","神武景気","いざなぎ景気"],
+  "石油危機（オイルショック）":["世界恐慌","バブル崩壊","リーマンショック"],
+  "冷戦":["日中戦争","朝鮮戦争","ベトナム戦争"],
+  "サンフランシスコ平和条約":["ポーツマス条約","下関条約","日米安全保障条約"],
+  "教育基本法":["教育勅語","学制","国家総動員法"],
+  "国際連合":["国際連盟","米州機構","欧州連合"],
+  "長崎・広島":["東京・大阪","名古屋・京都","仙台・横浜"],
+  "ポツダム宣言":["カイロ宣言","大西洋憲章","ヤルタ協定"],
+  "世界恐慌":["石油危機","バブル崩壊","アジア通貨危機"],
+  "国家総動員法":["治安維持法","大日本帝国憲法","教育基本法"],
+  "治安維持法":["国家総動員法","教育基本法","大日本帝国憲法"],
+  "全国水平社":["部落解放同盟","労働組合総評","大日本労働総同盟"],
+  "ポーツマス条約":["下関条約","サンフランシスコ平和条約","北京条約"],
+  "田中正造":["板垣退助","大隈重信","伊藤博文"],
+  "富国強兵・殖産興業":["文明開化・廃藩置県","版籍奉還・廃刀令","地租改正・学制"],
+  "伊藤博文":["大久保利通","板垣退助","西郷隆盛"],
+  "浮世絵":["大和絵","水墨画","琳派"],
+  "大政奉還":["王政復古","廃藩置県","版籍奉還"],
+  "株仲間":["座","惣","問屋"],
+  "享保の改革":["寛政の改革","天保の改革","安政の改革"],
+  "五人組":["検地帳","刀狩令","宗門改め"],
+  "千歯こき":["備中鍬","唐箕","踏み車"],
+  "武家諸法度":["参勤交代","禁中並公家諸法度","御成敗式目"],
+  "参勤交代":["武家諸法度","株仲間","五人組"],
+  "刀狩（り）・（太閤）検地":["楽市・楽座","参勤交代・武家諸法度","五人組・株仲間"],
+};
+
+// ============================================================
+// テスト③問題データ（月例テスト対策③ 総合回50問）
+// ============================================================
+const ALL_QA_3 = [
+  {q:"軍用地や塩田のあと地を利用して，海に面した地域に重化学工業の大規模な工場がつくられている工業地帯・地域の名を漢字で答えなさい。",a:"瀬戸内工業地域",cat:"産業③"},
+  {q:"経度が15度異なると何時間の時差が生じますか。",a:"1時間",cat:"地理③"},
+  {q:"貨物の積みかえを早く簡単に行うために使用する，幅と高さ・長さが一定の容器を何といいますか。",a:"コンテナ",cat:"産業③"},
+  {q:"日本が貿易の支払いに主に使っている通貨の種類を答えなさい。",a:"（アメリカの）ドル",cat:"産業③"},
+  {q:"化学工業の割合が最大の工業地帯・地域名を漢字で答えなさい。",a:"京葉工業地域",cat:"産業③"},
+  {q:"日本で輸入している石油と石炭以外のエネルギーでその割合が大きいものを答えなさい。",a:"液化天然ガス（ＬＮＧ）",cat:"産業③"},
+  {q:"外国から輸入した原料で，工業製品をつくって輸出する貿易を何といいますか。漢字で答えなさい。",a:"加工貿易",cat:"産業③"},
+  {q:"海外にある日本の会社の工場から，日本に製品を輸入することを何といいますか。",a:"逆輸入",cat:"産業③"},
+  {q:"2015年の工業生産額が2位の工業地帯・地域名を漢字で答えなさい。",a:"阪神工業地帯",cat:"産業③"},
+  {q:"2015年の工業生産額が3位の工業地帯・地域名を漢字で答えなさい。",a:"瀬戸内工業地域",cat:"産業③"},
+  {q:"乳牛の飼育数が日本一多い都道府県名を漢字で答えなさい。",a:"北海道",cat:"産業③"},
+  {q:"2015年の工業生産額が1位の工業地帯・地域名を漢字で答えなさい。",a:"中京工業地帯",cat:"産業③"},
+  {q:"みかんの生産量が日本で2位の県の県庁所在地を漢字で答えなさい。",a:"松山市",cat:"産業③"},
+  {q:"2017年に肉牛・豚・採卵鶏の飼育数のいずれもが日本で3位以内の県名を漢字で答えなさい。",a:"鹿児島県",cat:"産業③"},
+  {q:"ねぎの栽培が日本一多い都道府県の名を漢字で答えなさい。",a:"千葉県",cat:"産業③"},
+  {q:"りんご・ぶどう・ももの生産量のいずれもが日本で上位に位置している県名を漢字で答えなさい。",a:"長野県",cat:"産業③"},
+  {q:"大都市の周辺で野菜などがさかんに栽培されています。このような農業を何といいますか。漢字で答えなさい。",a:"近郊農業",cat:"産業③"},
+  {q:"キャベツの栽培が日本一多い都道府県の名を漢字で答えなさい。",a:"群馬県",cat:"産業③"},
+  {q:"宮崎平野や高知平野で盛んな野菜作りの方法を漢字で答えなさい。",a:"促成栽培",cat:"産業③"},
+  {q:"化学肥料や農薬を使わずたい肥などを用いる農業を漢字で答えなさい。",a:"有機農業",cat:"産業③"},
+  {q:"田起こしなどで使用する農業用機械の名を答えなさい。",a:"トラクター",cat:"産業③"},
+  {q:"コンバインを使うと稲刈りと同時に行える作業を漢字で答えなさい。",a:"脱穀",cat:"産業③"},
+  {q:"稲作の作業のうち，田に水を入れた後，土をくだいて平らにすることを何といいますか。",a:"代かき",cat:"産業③"},
+  {q:"米があまるようになったため，1970年ごろから稲の栽培面積を減らす政策を何といいますか。漢字で答えなさい。",a:"減反政策",cat:"産業③"},
+  {q:"日本でつくられている米の4分の1ほどを生産している地方はどこですか。漢字で答えなさい。",a:"東北地方",cat:"産業③"},
+  {q:"工業生産額が日本一の都道府県名を答えなさい。",a:"愛知県",cat:"産業③"},
+  {q:"2017年の日本の主な輸入品目の中で最も大きい割合を占めている品目は何ですか。",a:"機械類",cat:"産業③"},
+  {q:"1973年の石油危機で漁船の燃料が値上がりし，各国が200カイリ水域を設定したため減少した漁業は何ですか。",a:"遠洋漁業",cat:"産業③"},
+  {q:"2015年の日本の産業別の人口で最も大きい割合を占めているのは第何次産業ですか。",a:"第三次産業",cat:"産業③"},
+  {q:"1934年から1936年の日本の輸出品目の中で最も大きい割合を占めている品目は何ですか。",a:"せんい品",cat:"産業③"},
+  {q:"2017年の日本の輸出品目の中で2番目に割合が大きい品目は何ですか。",a:"自動車",cat:"産業③"},
+  {q:"日本の発電量の中で最も大きい割合をしめている発電方法は何ですか。（2015年）",a:"火力発電",cat:"産業③"},
+  {q:"日本のエネルギー供給の中で最も大きい割合を占めている資源は何ですか。（2015年）",a:"石油",cat:"産業③"},
+  {q:"ブラジルにある世界最大の流域面積をもつ川の名前を答えなさい。",a:"アマゾン川",cat:"地理③"},
+  {q:"日本人が海外旅行をしやすいのは，円高のときか円安のときかどちらかを答えなさい。",a:"円高",cat:"産業③"},
+  {q:"経線と緯線が直角に交わるように描かれている地図の描き方を何といいますか。漢字で答えなさい。",a:"メルカトル図法",cat:"地理③"},
+  {q:"日本が多くの石油を輸入している，石油の輸出量が世界一の国名を答えなさい。",a:"サウジアラビア",cat:"産業③"},
+  {q:"現在の日本の最大の貿易相手の国の名を答えなさい。",a:"中国",cat:"産業③"},
+  {q:"図の中心から世界各地への最短距離を直線で示している地図の描き方を何といいますか。漢字で答えなさい。",a:"正距方位図法",cat:"地理③"},
+  {q:"中華人民共和国の首都を漢字で答えなさい。",a:"北京",cat:"地理③"},
+  {q:"多くの工業製品を生産して世界へ輸出していることからつけられた中国の呼び名を答えなさい。",a:"世界の工場",cat:"地理③"},
+  {q:"世界人口の約6割が暮らしている世界の地域を答えなさい。",a:"アジア",cat:"地理③"},
+  {q:"人口が短い期間で急激に増加することを何と呼ぶか漢字で答えなさい。",a:"人口爆発",cat:"地理③"},
+  {q:"六つの大陸の中で，一番小さい大陸を答えなさい。",a:"オーストラリア大陸",cat:"地理③"},
+  {q:"地球における陸地と海洋の面積の比を答えなさい。",a:"3　：　7",cat:"地理③"},
+  {q:"六大陸の中で，面積が一番大きい大陸と二番目に大きい大陸の名を答えなさい。",a:"ユーラシア大陸・アフリカ大陸",cat:"地理③"},
+  {q:"東京から真東に進んだときに最初に到達する大陸の名前を答えなさい。",a:"南アメリカ大陸",cat:"地理③"},
+  {q:"世界三大宗教をすべて答えなさい。",a:"キリスト教・イスラム教・仏教",cat:"地理③"},
+  {q:"日本が6月12日の午前8時のとき，イギリスの日時を答えなさい。",a:"6月11日 午後11時",cat:"地理③"},
+  {q:"0度の経線を何と呼ぶか，漢字で答えなさい。",a:"本初子午線",cat:"地理③"},
+];
+
+const TRICKY_WRONG_3 = {
+  "瀬戸内工業地域":["阪神工業地帯","京浜工業地帯","北九州工業地帯"],
+  "1時間":["2時間","30分","3時間"],
+  "コンテナ":["パレット","タンカー","バルク"],
+  "（アメリカの）ドル":["ユーロ","円","ポンド"],
+  "京葉工業地域":["瀬戸内工業地域","北九州工業地帯","阪神工業地帯"],
+  "液化天然ガス（ＬＮＧ）":["原子力","太陽光","水力"],
+  "加工貿易":["自由貿易","保護貿易","三角貿易"],
+  "逆輸入":["直接投資","現地生産","輸出"],
+  "阪神工業地帯":["京葉工業地域","北九州工業地帯","中京工業地帯"],
+  "中京工業地帯":["阪神工業地帯","京浜工業地帯","北九州工業地帯"],
+  "北海道":["岩手県","栃木県","熊本県"],
+  "愛知県":["神奈川県","大阪府","静岡県"],
+  "松山市":["高松市","高知市","徳島市"],
+  "鹿児島県":["宮崎県","熊本県","千葉県"],
+  "千葉県":["茨城県","埼玉県","栃木県"],
+  "長野県":["山形県","岡山県","山梨県"],
+  "近郊農業":["促成栽培","抑制栽培","有機農業"],
+  "群馬県":["愛知県","千葉県","茨城県"],
+  "促成栽培":["抑制栽培","近郊農業","有機農業"],
+  "有機農業":["促成栽培","近郊農業","減反政策"],
+  "トラクター":["コンバイン","田植え機","脱穀機"],
+  "脱穀":["田植え","代かき","田起こし"],
+  "代かき":["田起こし","脱穀","田植え"],
+  "減反政策":["食糧管理制度","農地改革","土地改良"],
+  "東北地方":["北陸地方","関東地方","九州地方"],
+  "機械類":["石油","食料品","自動車"],
+  "遠洋漁業":["沿岸漁業","沖合漁業","養殖漁業"],
+  "第三次産業":["第一次産業","第二次産業","第四次産業"],
+  "せんい品":["鉄鋼","自動車","機械類"],
+  "自動車":["鉄鋼","半導体","化学品"],
+  "火力発電":["水力発電","原子力発電","太陽光発電"],
+  "石油":["石炭","天然ガス","原子力"],
+  "アマゾン川":["ナイル川","ミシシッピ川","長江"],
+  "円高":["円安","ドル高","ユーロ高"],
+  "メルカトル図法":["正距方位図法","モルワイデ図法","グード図法"],
+  "サウジアラビア":["アラブ首長国連邦","イラク","クウェート"],
+  "中国":["アメリカ","韓国","ドイツ"],
+  "正距方位図法":["メルカトル図法","モルワイデ図法","グード図法"],
+  "北京":["上海","南京","広州"],
+  "世界の工場":["世界の市場","世界の銀行","世界の農場"],
+  "アジア":["アフリカ","ヨーロッパ","南アメリカ"],
+  "人口爆発":["少子化","人口減少","過疎"],
+  "オーストラリア大陸":["南極大陸","南アメリカ大陸","北アメリカ大陸"],
+  "3　：　7":["4　：　6","5　：　5","2　：　8"],
+  "ユーラシア大陸・アフリカ大陸":["アフリカ大陸・北アメリカ大陸","ユーラシア大陸・北アメリカ大陸","南アメリカ大陸・オーストラリア大陸"],
+  "南アメリカ大陸":["アフリカ大陸","オーストラリア大陸","北アメリカ大陸"],
+  "キリスト教・イスラム教・仏教":["キリスト教・仏教・ヒンドゥー教","イスラム教・仏教・ユダヤ教","キリスト教・イスラム教・ヒンドゥー教"],
+  "6月11日 午後11時":["6月12日 午前9時","6月11日 午前9時","6月12日 午後11時"],
+  "本初子午線":["日付変更線","標準時子午線","赤道"],
+};
+
+const EXPLANATIONS_3 = {
+  "瀬戸内工業地域":{text:"瀬戸内工業地域は岡山・広島・山口・香川・愛媛の5県にまたがる工業地域。旧軍用地・塩田跡地を利用して石油化学・鉄鋼・造船が発展しました。",url:"https://www.meti.go.jp/"},
+  "1時間":{text:"地球は24時間で360度自転するため，1時間あたり15度進みます。経度差15度＝時差1時間が基本計算です。",url:"https://www.nao.ac.jp/"},
+  "コンテナ":{text:"コンテナ（ISO規格）は20フィートと40フィートが主流。積み替えの効率化により国際海上輸送コストを大幅に削減しました。",url:"https://www.mlit.go.jp/maritime/"},
+  "（アメリカの）ドル":{text:"国際貿易の決済通貨はアメリカドルが最も広く使われています（基軸通貨）。日本の輸出入もドル建て取引が多数を占めます。",url:"https://www.boj.or.jp/"},
+  "京葉工業地域":{text:"京葉工業地域は千葉県の東京湾岸に広がる工業地域。石油化学コンビナートが集積し，化学工業の出荷額比率が全国最大級です。",url:"https://www.meti.go.jp/"},
+  "液化天然ガス（ＬＮＧ）":{text:"日本は世界最大のLNG輸入国の一つ。石油・石炭に次ぐエネルギー源として，主にオーストラリア・マレーシア・カタールから輸入しています。",url:"https://www.enecho.meti.go.jp/"},
+  "加工貿易":{text:"加工貿易は原料・資源を輸入し，製品化して輸出する貿易形態。資源に乏しい日本が高度経済成長を実現した基盤となりました。",url:"https://www.customs.go.jp/"},
+  "逆輸入":{text:"円高・海外の安い労働力を利用するため，日本企業が海外工場で生産した製品を日本に輸入する形態。産業の空洞化の一因とも言われます。",url:"https://www.meti.go.jp/"},
+  "阪神工業地帯":{text:"阪神工業地帯は大阪・兵庫を中心とする工業地帯。金属・化学・食品などが集積し，工業生産額は全国2位（2015年）です。",url:"https://www.meti.go.jp/"},
+  "中京工業地帯":{text:"中京工業地帯は愛知・三重・岐阜を中心とする工業地帯。トヨタ自動車を核とする自動車産業が集積し，工業生産額は全国1位（2015年）です。",url:"https://www.meti.go.jp/"},
+  "北海道":{text:"北海道の乳牛飼育頭数は全国の約60%を占め（農林水産省畜産統計），十勝・根釧・天北原野が主産地です。",url:"https://www.maff.go.jp/j/tokei/kouhyou/tikusan/"},
+  "愛知県":{text:"愛知県の工業生産額は全国1位で，自動車・機械が中心。豊田市をはじめとするトヨタグループの集積が全国最大の工業県を支えています。",url:"https://www.pref.aichi.jp/"},
+  "松山市":{text:"みかんの生産量は愛媛県が全国2位（農林水産省作物統計）。松山市は愛媛県の県庁所在地です。1位は和歌山県です。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_tokusan/"},
+  "鹿児島県":{text:"鹿児島県は肉牛・豚・採卵鶏のすべてで飼育数上位（農林水産省畜産統計）。大隅半島・薩摩半島の広大な土地を活かした畜産が盛んです。",url:"https://www.maff.go.jp/j/tokei/kouhyou/tikusan/"},
+  "千葉県":{text:"千葉県はねぎの作付面積・収穫量ともに全国1位（農林水産省作物統計）。関東近郊の大消費地を背景とした近郊農業が発展しています。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_yasai/"},
+  "長野県":{text:"長野県はりんご（全国2位）・ぶどう（全国2位）・もも（全国3位）の生産量がいずれも上位（農林水産省作物統計）。高原の涼しい気候が果樹栽培に適しています。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_tokusan/"},
+  "近郊農業":{text:"近郊農業は大都市圏の近くで野菜・花卉などを生産する農業形態。輸送コストが低く，新鮮な状態で大消費地に出荷できます。",url:"https://www.maff.go.jp/"},
+  "群馬県":{text:"群馬県はキャベツの作付面積・収穫量ともに全国1位（農林水産省作物統計）。嬬恋村などの高冷地で夏秋キャベツが大量生産されます。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_yasai/"},
+  "促成栽培":{text:"促成栽培は，ビニールハウスなどを使って野菜の出荷時期を早める農業。宮崎平野・高知平野では冬から春にかけてきゅうり・ピーマンなどを出荷します。",url:"https://www.maff.go.jp/"},
+  "有機農業":{text:"有機農業は化学肥料・農薬を使わず，たい肥などの有機物を中心に土をつくる農業。環境負荷が低く，食の安全への関心の高まりとともに需要が増加しています。",url:"https://www.maff.go.jp/j/seisan/kankyo/yuuki/"},
+  "トラクター":{text:"トラクターは田起こし・耕うんなどに使われる農業用機械。エンジンで走行しながら土を掘り返し，作付けの準備をします。",url:"https://www.maff.go.jp/"},
+  "脱穀":{text:"コンバインは稲刈り（刈り取り）と脱穀（穂から米粒を外す作業）を同時に行う機械。一人でも大面積の稲作が可能になりました。",url:"https://www.maff.go.jp/"},
+  "代かき":{text:"代かきは田に水を入れた後，トラクターなどで土を細かく砕いて表面を平らにする作業。水の漏れを防ぎ，田植えがしやすくなります。",url:"https://www.maff.go.jp/"},
+  "減反政策":{text:"減反政策（生産調整）は，1970年ごろから始まった米の過剰生産を抑える政策。稲作から転作（大豆・麦など）への補助金も支給されました。2018年に廃止されています。",url:"https://www.maff.go.jp/"},
+  "東北地方":{text:"東北地方（青森・岩手・宮城・秋田・山形・福島）の米生産量は全国の約25%（農林水産省作物統計）。庄内平野・秋田平野などが主産地です。",url:"https://www.maff.go.jp/j/tokei/kouhyou/sakumotu/sakkyou_kome/"},
+  "機械類":{text:"2017年の日本の輸入品目1位は機械類（コンピューター・半導体等）で，輸入総額の約20%を占めます（財務省貿易統計）。",url:"https://www.customs.go.jp/toukei/shinbun/trade-st_e.htm"},
+  "遠洋漁業":{text:"遠洋漁業は1973年の石油危機による燃料費高騰と各国の200カイリ排他的経済水域設定により急減。ピーク時（1972年）の約600万トンから激減しました。",url:"https://www.jfa.maff.go.jp/"},
+  "第三次産業":{text:"2015年の日本の産業別就業人口は第三次産業（サービス・商業・運輸など）が約72%を占め最多（総務省国勢調査）。",url:"https://www.stat.go.jp/data/kokusei/2015/"},
+  "せんい品":{text:"1934〜36年の日本の輸出品目1位は繊維品（綿織物・生糸など）で，輸出額の約50%を占めていました（財務省貿易統計）。",url:"https://www.customs.go.jp/"},
+  "自動車":{text:"2017年の日本の輸出品目2位は自動車（乗用車）で，輸出総額の約14%（財務省貿易統計）。1位は機械類（半導体等電子部品含む）です。",url:"https://www.customs.go.jp/toukei/shinbun/trade-st_e.htm"},
+  "火力発電":{text:"2015年の日本の発電量は火力発電が約86%を占め最多（資源エネルギー庁）。東日本大震災後の原発停止により火力依存が急増しました。",url:"https://www.enecho.meti.go.jp/"},
+  "石油":{text:"2015年の日本のエネルギー供給に占める石油の割合は約43%で最大（資源エネルギー庁エネルギー白書）。輸入依存度はほぼ100%です。",url:"https://www.enecho.meti.go.jp/about/whitepaper/"},
+  "アマゾン川":{text:"アマゾン川の流域面積は約705万㎢で世界最大。南アメリカ大陸の約40%を占め，ブラジル北部を東西に横断しています。",url:"https://www.ibge.gov.br/"},
+  "円高":{text:"円高とは円の価値が外国通貨に対して高い状態。海外旅行では少ない円で多くの外貨を入手できるため，旅行費用が割安になります。",url:"https://www.boj.or.jp/"},
+  "メルカトル図法":{text:"メルカトル図法は1569年にフラマン人のメルカトルが考案。経線と緯線が直角に交わり，角度が正確なため航海図に多く使用されます。",url:"https://www.gsi.go.jp/"},
+  "サウジアラビア":{text:"サウジアラビアは世界最大の石油輸出国（BP統計）。日本の石油輸入先の約40%を占め，アラブ首長国連邦と合わせ中東依存度は約90%です。",url:"https://www.enecho.meti.go.jp/"},
+  "中国":{text:"中国は2020年以降日本の最大の貿易相手国。輸出入合計で約22%（財務省貿易統計）を占め，アメリカ・韓国・台湾を上回ります。",url:"https://www.customs.go.jp/toukei/shinbun/trade-st_e.htm"},
+  "正距方位図法":{text:"正距方位図法は地図の中心からの最短距離（大圏コース）と方位が正確に表現される地図法。航空路線図や地震の震央からの距離計算に使われます。",url:"https://www.gsi.go.jp/"},
+  "北京":{text:"北京（ペキン）は中華人民共和国の首都。人口約2,100万人（2020年国勢調査）の政治・文化の中心都市です。",url:"https://www.stats.gov.cn/"},
+  "世界の工場":{text:"中国は豊富な労働力と広大な土地を背景に，1990年代〜2000年代にかけて「世界の工場」と呼ばれる製造業大国に成長しました。近年は「世界の市場」とも呼ばれます。",url:"https://www.meti.go.jp/"},
+  "アジア":{text:"世界人口は約80億人（2022年，国連）で，うちアジアが約46億人（約57%）を占め最多。中国・インドだけで世界人口の3分の1以上を占めます。",url:"https://population.un.org/wpp/"},
+  "人口爆発":{text:"人口爆発とは，医療・衛生の改善による死亡率低下と高い出生率が組み合わさり，人口が急増する現象。主にアジア・アフリカで20世紀後半に見られました。",url:"https://population.un.org/wpp/"},
+  "オーストラリア大陸":{text:"オーストラリア大陸の面積は約769万㎢で六大陸中最小。ただし大陸として数える場合，南極大陸（約1,400万㎢）は別扱いです。",url:"https://www.ga.gov.au/"},
+  "3　：　7":{text:"地球の表面積は約5億1,000万㎢。そのうち陸地が約1億4,900万㎢（約29%），海洋が約3億6,100万㎢（約71%）で，陸地：海洋≒3：7です。",url:"https://www.gsi.go.jp/"},
+  "ユーラシア大陸・アフリカ大陸":{text:"六大陸の面積順は，ユーラシア大陸（約5,390万㎢）・アフリカ大陸（約3,020万㎢）・北アメリカ大陸・南アメリカ大陸・南極大陸・オーストラリア大陸の順です。",url:"https://www.gsi.go.jp/"},
+  "南アメリカ大陸":{text:"東京（東経140度）から真東に進むと，太平洋を越えて南アメリカ大陸（ペルー・エクアドル付近，西経約140度）に到達します。",url:"https://www.gsi.go.jp/"},
+  "キリスト教・イスラム教・仏教":{text:"世界三大宗教はキリスト教（約24億人）・イスラム教（約19億人）・仏教（約5億人）。ヒンドゥー教（約13億人）は信者数は多いですが，民族宗教のため除かれます。",url:"https://www.un.org/"},
+  "6月11日 午後11時":{text:"日本（東経135度，UTC+9）とイギリス（UTC±0）の時差は9時間。日本の6月12日午前8時から9時間引くと，6月11日午後11時（23時）になります。",url:"https://www.nao.ac.jp/"},
+  "本初子午線":{text:"本初子午線は経度0度の経線。イギリスのグリニッジ天文台を通り，1884年の国際子午線会議で世界標準として採択されました。",url:"https://www.gsi.go.jp/"},
+};
+
+// ============================================================
+// テスト④問題データ（月例テスト対策④ 総合回50問）
+// ============================================================
+const ALL_QA_4 = [
+  {q:"夏の少雨が原因で，瀬戸内地方で発生する害はなんですか。",a:"干害",cat:"気候④"},
+  {q:"南東の季節風の影響を受けて，夏は蒸し暑くなる地域の気候を何といいますか。",a:"太平洋側の気候",cat:"気候④"},
+  {q:"日本アルプスをすべて答えなさい（その1・北アルプス）。",a:"飛驒山脈",cat:"地形④"},
+  {q:"日本アルプスをすべて答えなさい（その2・中アルプス）。",a:"木曽山脈",cat:"地形④"},
+  {q:"日本アルプスをすべて答えなさい（その3・南アルプス）。",a:"赤石山脈",cat:"地形④"},
+  {q:"降水量が多く，一年を通じて気温が高い亜熱帯の気候を何といいますか。",a:"南西諸島の気候",cat:"気候④"},
+  {q:"山形県を流れる，日本三大急流の一つの川の名を漢字で答えなさい。",a:"最上川",cat:"地形④"},
+  {q:"北西の季節風の影響を受けて，冬に雪や雨が多く降る地域の気候を何といいますか。",a:"日本海側の気候",cat:"気候④"},
+  {q:"人工の三大美林をすべて答えなさい（その1）。",a:"天竜すぎ",cat:"林業④"},
+  {q:"人工の三大美林をすべて答えなさい（その2）。",a:"吉野すぎ",cat:"林業④"},
+  {q:"人工の三大美林をすべて答えなさい（その3）。",a:"尾鷲ひのき",cat:"林業④"},
+  {q:"天然の三大美林をすべて答えなさい（その1）。",a:"木曽ひのき",cat:"林業④"},
+  {q:"天然の三大美林をすべて答えなさい（その2）。",a:"津軽ひば（青森ひば）",cat:"林業④"},
+  {q:"天然の三大美林をすべて答えなさい（その3）。",a:"秋田すぎ",cat:"林業④"},
+  {q:"冬と夏の気温の差が大きく，降水量の少ない地域の気候を何といいますか。",a:"中央高地（内陸性）の気候",cat:"気候④"},
+  {q:"冬が長く，寒さの厳しい冷帯の気候を何といいますか。",a:"北海道の気候",cat:"気候④"},
+  {q:"一年中降水量が少なく，温和な地域の気候を何といいますか。",a:"瀬戸内の気候",cat:"気候④"},
+  {q:"季節によって，吹いてくる方位がちがう風のことを何といいますか。漢字で答えなさい。",a:"季節風",cat:"気候④"},
+  {q:"東北地方で冷害を引き起こす原因になるものはなんですか。",a:"やませ",cat:"気候④"},
+  {q:"日本三大急流をすべて答えなさい（その1）。",a:"球磨川",cat:"地形④"},
+  {q:"日本三大急流をすべて答えなさい（その2）。",a:"富士川",cat:"地形④"},
+  {q:"日本三大急流をすべて答えなさい（その3）。",a:"最上川",cat:"地形④"},
+  {q:"岩手県にある世界遺産の名を答えなさい。",a:"平泉",cat:"世界遺産④"},
+  {q:"生糸の生産をさかんにするため，明治時代に建設された世界遺産の名を答えなさい。",a:"富岡製糸場",cat:"世界遺産④"},
+  {q:"川が山地から平地へ流れ出るところにできる，ゆるやかに傾斜した土地を何といいますか。",a:"扇状地",cat:"地形④"},
+  {q:"世界遺産に登録されている，現存する世界最古の木造建築の名を答えなさい。",a:"法隆寺",cat:"世界遺産④"},
+  {q:"青森県と秋田県にまたがる，ぶなの原生林で知られる世界遺産の名を答えなさい。",a:"白神山地",cat:"世界遺産④"},
+  {q:"縄文杉をはじめとするすぎの原生林がある鹿児島県の世界遺産の名を答えなさい。",a:"屋久島",cat:"世界遺産④"},
+  {q:"水鳥の生息地として重要な湿地と，そこに生息する野生生物を保護するための条約を何といいますか。",a:"ラムサール条約",cat:"環境④"},
+  {q:"冬に降水量が多い地域の多くは，何という海に面していますか。",a:"日本海",cat:"気候④"},
+  {q:"石炭や石油などは，大昔の動植物の死がいが地層の中で変化してできたことから，何とよばれていますか。漢字で答えなさい。",a:"化石燃料",cat:"環境④"},
+  {q:"日本海に位置し，領有をめぐって日本と韓国が対立している島の名を答えなさい。",a:"竹島",cat:"地形④"},
+  {q:"地球の上空をとりまいている気体の層で，紫外線を吸収して地球の生物を守るはたらきをしているものは何といいますか。",a:"オゾン層",cat:"環境④"},
+  {q:"国連教育科学文化機関の略称を答えなさい。",a:"ユネスコ",cat:"世界遺産④"},
+  {q:"広島県にある世界文化遺産の名を答えなさい（その1）。",a:"原爆ドーム",cat:"世界遺産④"},
+  {q:"広島県にある世界文化遺産の名を答えなさい（その2）。",a:"厳島神社",cat:"世界遺産④"},
+  {q:"1992年に国連環境開発会議が開かれたブラジルの都市はどこですか。",a:"リオデジャネイロ",cat:"環境④"},
+  {q:"日本で最も北にある世界自然遺産の名を漢字で答えなさい。",a:"知床",cat:"世界遺産④"},
+  {q:"日本の太平洋側を流れる暖流の名を漢字で答えなさい。",a:"黒潮（日本海流）",cat:"地形④"},
+  {q:"日本一長い山脈の名を漢字で答えなさい。",a:"奥羽山脈",cat:"地形④"},
+  {q:"日本の大部分が含まれる気候帯の名を漢字で答えなさい。",a:"温帯",cat:"気候④"},
+  {q:"日本の山地は，国土面積のどのくらいの割合を占めていますか。",a:"約4分の3",cat:"地形④"},
+  {q:"戦後，経済成長と人口増加で木材需要が高まり，最も多く植林された樹木を答えなさい。",a:"すぎ",cat:"林業④"},
+  {q:"おもに木材を生産する目的で植えられてきた，すぎやまつのように細長い葉をもつ木を何といいますか。漢字で答えなさい。",a:"針葉樹",cat:"林業④"},
+  {q:"雨水などをいったんたくわえて少しずつ川などに流れ出させることから，森林は何とよばれていますか。",a:"緑のダム",cat:"林業④"},
+  {q:"日本の森林は，国土面積のどのくらいの割合を占めていますか。",a:"約3分の2",cat:"林業④"},
+  {q:"自然環境を開発から守るために人々がお金を出し合って土地を買いとることを何といいますか。",a:"ナショナル・トラスト",cat:"環境④"},
+  {q:"林業の作業のうち，節のない木材をつくるために下枝を切り落とす作業を何といいますか。",a:"枝打ち",cat:"林業④"},
+  {q:"日本の広葉樹は，人工林と天然林のどちらに多く見られますか。",a:"天然林",cat:"林業④"},
+  {q:"農業・工業などの産業や，人々の生活のために水を使うことを何といいますか。漢字で答えなさい。",a:"利水",cat:"環境④"},
+  {q:"夏の季節風は，どちらの方位から吹いてきますか。",a:"南東",cat:"気候④"},
+];
+
+const TRICKY_WRONG_4 = {
+  "干害":["冷害","水害","風害"],
+  "太平洋側の気候":["日本海側の気候","中央高地（内陸性）の気候","南西諸島の気候"],
+  "飛驒山脈":["木曽山脈","赤石山脈","越後山脈"],
+  "木曽山脈":["飛驒山脈","赤石山脈","越後山脈"],
+  "赤石山脈":["飛驒山脈","木曽山脈","越後山脈"],
+  "南西諸島の気候":["太平洋側の気候","日本海側の気候","瀬戸内の気候"],
+  "最上川":["信濃川","北上川","阿賀野川"],
+  "日本海側の気候":["太平洋側の気候","中央高地（内陸性）の気候","瀬戸内の気候"],
+  "天竜すぎ":["吉野すぎ","尾鷲ひのき","秋田すぎ"],
+  "吉野すぎ":["天竜すぎ","尾鷲ひのき","木曽ひのき"],
+  "尾鷲ひのき":["天竜すぎ","吉野すぎ","木曽ひのき"],
+  "木曽ひのき":["津軽ひば（青森ひば）","秋田すぎ","尾鷲ひのき"],
+  "津軽ひば（青森ひば）":["木曽ひのき","秋田すぎ","吉野すぎ"],
+  "秋田すぎ":["木曽ひのき","津軽ひば（青森ひば）","天竜すぎ"],
+  "中央高地（内陸性）の気候":["日本海側の気候","太平洋側の気候","瀬戸内の気候"],
+  "北海道の気候":["中央高地（内陸性）の気候","太平洋側の気候","日本海側の気候"],
+  "瀬戸内の気候":["太平洋側の気候","日本海側の気候","中央高地（内陸性）の気候"],
+  "季節風":["偏西風","貿易風","台風"],
+  "やませ":["フェーン現象","空梅雨","干害"],
+  "球磨川":["富士川","最上川","信濃川"],
+  "富士川":["球磨川","最上川","天竜川"],
+  "平泉":["富岡製糸場","白神山地","厳島神社"],
+  "富岡製糸場":["平泉","石見銀山遺跡","法隆寺"],
+  "扇状地":["三角州","沖積平野","台地"],
+  "法隆寺":["東大寺","唐招提寺","薬師寺"],
+  "白神山地":["屋久島","知床","奥入瀬渓流"],
+  "屋久島":["白神山地","知床","西表島"],
+  "ラムサール条約":["ワシントン条約","バーゼル条約","京都議定書"],
+  "日本海":["太平洋","東シナ海","オホーツク海"],
+  "化石燃料":["再生可能エネルギー","原子力","バイオマス"],
+  "竹島":["尖閣諸島","北方四島","沖ノ鳥島"],
+  "オゾン層":["温室効果ガス","酸性雨","二酸化炭素"],
+  "ユネスコ":["ユニセフ","UNEP","WHO"],
+  "原爆ドーム":["厳島神社","広島城","縮景園"],
+  "厳島神社":["原爆ドーム","金刀比羅宮","住吉大社"],
+  "リオデジャネイロ":["ニューヨーク","ジュネーブ","京都"],
+  "知床":["白神山地","屋久島","奥入瀬渓流"],
+  "黒潮（日本海流）":["親潮（千島海流）","対馬海流","リマン海流"],
+  "奥羽山脈":["越後山脈","出羽山地","北上高地"],
+  "温帯":["冷帯","熱帯","乾燥帯"],
+  "約4分の3":["約2分の1","約3分の2","約5分の4"],
+  "すぎ":["ひのき","まつ","ひば"],
+  "針葉樹":["広葉樹","落葉樹","常緑樹"],
+  "緑のダム":["水源林","保安林","防風林"],
+  "約3分の2":["約2分の1","約4分の3","約5分の4"],
+  "ナショナル・トラスト":["ラムサール条約","グリーンベルト","エコツーリズム"],
+  "枝打ち":["間伐","下刈り","植林"],
+  "天然林":["人工林","混交林","二次林"],
+  "利水":["治水","環境保全","水源涵養"],
+  "南東":["北西","南西","北東"],
+};
+
+const EXPLANATIONS_4 = {
+  "干害":{text:"干害は夏に降水量が極端に少なく，農作物が水不足になる被害。瀬戸内地方は梅雨・台風の影響が山地に遮られ，年間降水量が少ないため干害が起きやすい地域です。",url:"https://www.mlit.go.jp/river/"},
+  "太平洋側の気候":{text:"太平洋側の気候は夏に南東季節風の影響で蒸し暑く降水量が多い。冬は北西季節風が山地に遮られ，晴天が多く乾燥します。関東・東海・近畿南部などが該当します。",url:"https://www.jma.go.jp/"},
+  "飛驒山脈":{text:"飛驒山脈（北アルプス）は長野・岐阜・富山・新潟にまたがる山脈。最高峰は奥穂高岳（3,190m）。3,000m超の峰が連なり「日本の屋根」の一角を担います。",url:"https://www.gsi.go.jp/"},
+  "木曽山脈":{text:"木曽山脈（中アルプス）は長野・岐阜にまたがる山脈。最高峰は木曽駒ヶ岳（2,956m）。木曽谷を挟んで飛驒山脈と向かい合います。",url:"https://www.gsi.go.jp/"},
+  "赤石山脈":{text:"赤石山脈（南アルプス）は長野・静岡・山梨にまたがる山脈。最高峰は北岳（3,193m）で富士山に次ぐ日本第2位の高峰。",url:"https://www.gsi.go.jp/"},
+  "南西諸島の気候":{text:"南西諸島の気候（亜熱帯）は年間を通じて気温が高く降水量が多い。沖縄・奄美諸島などが該当し，さんご礁・マングローブ林が発達します。",url:"https://www.jma.go.jp/"},
+  "最上川":{text:"最上川は山形県を流れる全長229kmの一級河川。球磨川・富士川とともに日本三大急流の一つ。松尾芭蕉の句「五月雨を集めてはやし最上川」でも知られます。",url:"https://www.mlit.go.jp/river/"},
+  "日本海側の気候":{text:"日本海側の気候は冬に北西季節風が日本海の水分を含み，山地にぶつかって大量の雪・雨をもたらします。新潟・富山・石川などは世界有数の豪雪地帯です。",url:"https://www.jma.go.jp/"},
+  "天竜すぎ":{text:"天竜すぎは静岡県天竜地域で生産される人工三大美林の一つ。赤みを帯びた木肌と通直な木目が特徴で，建築材・家具材として高品質とされます。",url:"https://www.rinya.maff.go.jp/"},
+  "吉野すぎ":{text:"吉野すぎは奈良県吉野地域で生産される人工三大美林の一つ。約400年の歴史を持ち，密植・多回間伐により節の少ない高品質材が生産されます。",url:"https://www.rinya.maff.go.jp/"},
+  "尾鷲ひのき":{text:"尾鷲ひのきは三重県尾鷲地域で生産される人工三大美林の一つ。日本有数の多雨地帯で育ったひのきは，緻密な木目と耐水性の高さで知られます。",url:"https://www.rinya.maff.go.jp/"},
+  "木曽ひのき":{text:"木曽ひのきは長野県木曽地域の天然林に生育する天然三大美林の一つ。江戸時代から尾張藩が厳重に管理してきた良質な天然ひのきです。",url:"https://www.rinya.maff.go.jp/"},
+  "津軽ひば（青森ひば）":{text:"津軽ひば（青森ひば）は青森県産の天然三大美林の一つ。極めて耐腐性が高く，白神山地周辺などに自生。建築・工芸材として珍重されます。",url:"https://www.rinya.maff.go.jp/"},
+  "秋田すぎ":{text:"秋田すぎは秋田県の天然美林で天然三大美林の一つ。能代・北秋田地方の天然林に自生し，まっすぐで木目の細かい高品質材として知られます。",url:"https://www.rinya.maff.go.jp/"},
+  "中央高地（内陸性）の気候":{text:"中央高地の気候は山地に囲まれ海洋の影響を受けにくいため，夏と冬の気温差が大きく年間降水量が少ない。長野盆地・甲府盆地などが典型例です。",url:"https://www.jma.go.jp/"},
+  "北海道の気候":{text:"北海道の気候は冷帯（亜寒帯）に属し，冬が長く厳しい寒さが続きます。梅雨がなく夏は短いが比較的涼しい。年間降水量は本州より少ない地域が多いです。",url:"https://www.jma.go.jp/"},
+  "瀬戸内の気候":{text:"瀬戸内の気候は中国山地・四国山地に挟まれているため，季節風の影響が弱く，一年中降水量が少なく温和。日照時間が長く，みかん栽培などに適しています。",url:"https://www.jma.go.jp/"},
+  "季節風":{text:"季節風（モンスーン）は夏と冬で方向が逆転する季節的な卓越風。夏は海から大陸へ（南東），冬は大陸から海へ（北西）吹く。日本の気候に大きな影響を与えます。",url:"https://www.jma.go.jp/"},
+  "やませ":{text:"やませは初夏から夏にかけてオホーツク海高気圧から吹く冷涼・湿潤な北東風。東北地方の太平洋側に冷害・日照不足をもたらし，稲作に大きな被害を与えます。",url:"https://www.jma.go.jp/"},
+  "球磨川":{text:"球磨川は熊本県南部を流れる全長115kmの一級河川。急峻な流れで日本三大急流の一つ。球磨川ラフティングで知られましたが2020年7月豪雨で甚大な被害を受けました。",url:"https://www.mlit.go.jp/river/"},
+  "富士川":{text:"富士川は山梨・静岡県を流れる全長128kmの一級河川。急流で知られ，球磨川・最上川とともに日本三大急流の一つです。",url:"https://www.mlit.go.jp/river/"},
+  "平泉":{text:"平泉（岩手県）は12世紀に奥州藤原氏が栄えた地。中尊寺金色堂をはじめとする仏教建築群が2011年に世界文化遺産登録されました。",url:"https://whc.unesco.org/en/list/1277"},
+  "富岡製糸場":{text:"富岡製糸場（群馬県）は1872年に明治政府が設立した近代的器械製糸工場。生糸の品質向上と輸出振興に貢献し，2014年に世界文化遺産登録されました。",url:"https://whc.unesco.org/en/list/1449"},
+  "扇状地":{text:"扇状地は河川が山間部から平野に出るところで土砂が堆積し扇形に広がった地形。水はけがよいため，果樹（ぶどう・もも）栽培に適しています（山梨県甲府盆地など）。",url:"https://www.gsi.go.jp/"},
+  "法隆寺":{text:"法隆寺（奈良県）は607年創建とされる世界最古の木造建築群。西院伽藍・東院伽藍などが現存し，1993年に日本初のユネスコ世界文化遺産に登録されました。",url:"https://whc.unesco.org/en/list/660"},
+  "白神山地":{text:"白神山地は青森・秋田両県にまたがる約13万haの山地。人の手が入っていないブナ原生林が世界最大規模で残り，1993年にユネスコ世界自然遺産として登録されました。",url:"https://whc.unesco.org/en/list/663"},
+  "屋久島":{text:"屋久島（鹿児島県）は樹齢数千年の縄文杉を含む屋久杉の原生林で知られ，1993年にユネスコ世界自然遺産として登録。年間降水量は山岳部で8,000mmを超えます。",url:"https://whc.unesco.org/en/list/662"},
+  "ラムサール条約":{text:"ラムサール条約は1971年にイランのラムサールで採択された湿地保護条約。日本では釧路湿原・琵琶湖など53か所（2023年時点）が登録されています。",url:"https://www.env.go.jp/nature/ramsar/"},
+  "日本海":{text:"日本海側の地域（北陸・山陰など）は冬に北西季節風が日本海上空で水分を補い，山地にぶつかることで大量の雪や雨をもたらします。",url:"https://www.jma.go.jp/"},
+  "化石燃料":{text:"化石燃料は石炭・石油・天然ガスの総称。大昔の動植物の遺骸が地層中で変化したもので，燃焼するとCO₂を排出するため地球温暖化の主要因とされています。",url:"https://www.enecho.meti.go.jp/"},
+  "竹島":{text:"竹島は島根県隠岐の島町に属する日本固有の領土ですが，韓国が実効支配しています。日本政府は外交交渉による平和的解決を目指す立場を取っています。",url:"https://www.mofa.go.jp/mofaj/area/takeshima/"},
+  "オゾン層":{text:"オゾン層は成層圏（高度15〜50km）に存在するオゾン（O₃）の層。フロンガスなどによる破壊が問題となり，1987年にモントリオール議定書が採択されました。",url:"https://www.env.go.jp/air/ozone/"},
+  "ユネスコ":{text:"ユネスコ（UNESCO）は国連教育科学文化機関の略称。世界遺産条約（1972年採択）に基づき，世界の文化遺産・自然遺産の保護・保全を進めています。",url:"https://whc.unesco.org/"},
+  "原爆ドーム":{text:"原爆ドームは1945年8月6日の原爆投下で被災した建物。核兵器廃絶と世界恒久平和のシンボルとして，1996年に世界文化遺産に登録されました。",url:"https://whc.unesco.org/en/list/775"},
+  "厳島神社":{text:"厳島神社は広島県廿日市市宮島町にある神社。海上に浮かぶ大鳥居と社殿が「日本三景」の一つとして知られ，原爆ドームとともに1996年に世界文化遺産登録されました。",url:"https://whc.unesco.org/en/list/775"},
+  "リオデジャネイロ":{text:"1992年にブラジルのリオデジャネイロで開かれた国連環境開発会議（地球サミット）では，気候変動枠組条約・生物多様性条約が署名され，アジェンダ21が採択されました。",url:"https://www.env.go.jp/"},
+  "知床":{text:"知床は北海道東部の半島。海と陸の生態系が交わる独特の生物多様性が評価され，2005年に日本最北のユネスコ世界自然遺産として登録されました。",url:"https://whc.unesco.org/en/list/1193"},
+  "黒潮（日本海流）":{text:"黒潮（日本海流）は太平洋を北上する暖流。日本の南岸〜東岸を流れ，温暖・湿潤な気候をもたらします。世界最大級の海流の一つです。",url:"https://www.jma.go.jp/"},
+  "奥羽山脈":{text:"奥羽山脈は青森県から栃木県まで南北約500kmにわたる日本最長の山脈。東北地方を太平洋側と日本海側に分ける「東北の背骨」で，最高峰は岩手山（2,038m）です。",url:"https://www.gsi.go.jp/"},
+  "温帯":{text:"温帯は四季がはっきりしており，年平均気温が概ね5〜20℃の気候帯。日本の大部分（北海道を除く）はこの温帯（温帯湿潤気候）に属します。",url:"https://www.jma.go.jp/"},
+  "約4分の3":{text:"日本の国土面積のうち，山地・丘陵地が約75%（約4分の3）を占めます（国土交通省）。平地は約25%しかなく，可住地面積が限られています。",url:"https://www.mlit.go.jp/"},
+  "すぎ":{text:"戦後の木材需要増大に対応するため，成長が早く用途が広いすぎが全国で大量に植林されました。現在，人工林面積の約44%（林野庁統計）をすぎが占めています。",url:"https://www.rinya.maff.go.jp/"},
+  "針葉樹":{text:"針葉樹はすぎ・まつ・ひのきなど，細長い葉（針状葉）をもつ樹木の総称。主に木材生産目的で植林され，人工林の大部分を占めます。",url:"https://www.rinya.maff.go.jp/"},
+  "緑のダム":{text:"森林は降雨を土壌に貯留し，洪水を防ぎながら少しずつ川へ放出する機能を持つことから「緑のダム」と呼ばれます。水源涵養機能ともいいます。",url:"https://www.rinya.maff.go.jp/"},
+  "約3分の2":{text:"日本の国土面積の約66%（約3分の2）が森林に覆われています（林野庁調査）。先進国の中でも高い森林率を誇りますが，林業の担い手不足が課題です。",url:"https://www.rinya.maff.go.jp/"},
+  "ナショナル・トラスト":{text:"ナショナル・トラストは1895年にイギリスで始まった環境保護運動。日本では北海道の知床・沖縄の渡嘉敷島などで取り組みが行われています。",url:"https://www.env.go.jp/"},
+  "枝打ち":{text:"枝打ちは木の成長途中に不要な下枝を切り落とす林業作業。木材の節をなくして品質を高めるために行います。通風・採光も改善され，下草の成長を助ける効果もあります。",url:"https://www.rinya.maff.go.jp/"},
+  "天然林":{text:"日本の森林は天然林と人工林に大別されます。広葉樹（ブナ・ナラ・クヌギなど）は天然林に多く，針葉樹（すぎ・ひのき・まつ）は人工林に多く見られます。",url:"https://www.rinya.maff.go.jp/"},
+  "利水":{text:"利水は農業・工業・生活用水など，人が水を利用することの総称。治水（洪水防止）と対になる概念で，ダム・用水路などのインフラが整備されています。",url:"https://www.mlit.go.jp/river/"},
+  "南東":{text:"日本の夏の季節風は太平洋（小笠原気団）からの暖かく湿った南東の風。多量の水蒸気を含み，太平洋側に多くの雨をもたらします。冬の季節風はシベリアからの北西の風です。",url:"https://www.jma.go.jp/"},
+};
+
+// ============================================================
+// テスト③問題データ（月例テスト対策③ 総合回50問）
+// ============================================================
+
+let currentDeck = 1; // 1, 2, 3, or 4
+
+function selectDeck(n){
+  currentDeck = n;
+  document.getElementById('top-select').style.display = 'none';
+  document.getElementById('quiz-area').style.display = 'block';
+  const labels = {1:'月例テスト対策①',2:'月例テスト対策②',3:'月例テスト対策③',4:'月例テスト対策④'};
+  const label = labels[n] || '月例テスト対策①';
+  document.getElementById('header-title').innerHTML = label.replace('①','<span>①</span>').replace('②','<span>②</span>').replace('③','<span>③</span>').replace('④','<span>④</span>');
+  document.getElementById('header-back').style.display = 'block';
+  document.getElementById('header-save-btn').style.display = 'block';
+  const geoBtn = document.getElementById('m-geo');
+  const mapBtn = document.getElementById('m-map');
+  if(n === 2){
+    geoBtn.textContent = '歴史②'; geoBtn.style.display = ''; mapBtn.style.display = 'none';
+  } else if(n === 3){
+    geoBtn.textContent = '産業③'; geoBtn.style.display = ''; mapBtn.style.display = 'none';
+  } else if(n === 4){
+    geoBtn.textContent = '気候④'; geoBtn.style.display = ''; mapBtn.style.display = 'none';
+  } else {
+    geoBtn.textContent = '地理'; geoBtn.style.display = ''; mapBtn.style.display = '';
+  }
+  mode = 'all'; correct=0; wrong=0; idx=0; wrongIds=[]; totalBonus=0; totalElapsed=0; catStats={};
+  ['all','geo','map','wrong','time','exam'].forEach(x=>{
+    const el = document.getElementById('m-'+x);
+    if(el) el.classList.toggle('active', x==='all');
+  });
+  buildDeck();
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('timer-bar').style.display = 'none';
+  render();
+}
+
+function getActiveQA(){
+  if(currentDeck === 2) return ALL_QA_2;
+  if(currentDeck === 3) return ALL_QA_3;
+  if(currentDeck === 4) return ALL_QA_4;
+  return ALL_QA;
+}
+
+// ============================================================
+// TOP画面 — 分野別正答率パネル
+// ============================================================
+let topCatDeck = 1; // 1, 2, 3, or 4
+
+function switchCatDeck(n){
+  topCatDeck = n;
+  [1,2,3,4].forEach(i=>{
+    const el=document.getElementById('ctab-'+i);
+    if(el) el.classList.toggle('active',i===n);
+  });
+  renderTopCatPanel();
+}
+
+function renderTopCatPanel(){
+  const panel = document.getElementById('top-cat-panel');
+  const body  = document.getElementById('top-cat-body');
+  let data = [];
+  try{ data = JSON.parse(localStorage.getItem('flashcard_ranking')||'[]'); }catch(e){}
+
+  // 対象デッキのレコードのみ
+  const records = data.filter(r => (r.deckNo||1) === topCatDeck && r.catStats);
+
+  if(records.length === 0){
+    body.innerHTML = '<div class="top-cat-empty">まだデータがありません。<br>プレイして記録しよう！</div>';
+    panel.style.display = 'block';
+    return;
+  }
+
+  // 全レコードのcatStatsを分野ごとに累積
+  const accum = {}; // {catName: {correct, total, sessions}}
+  records.forEach(r => {
+    Object.entries(r.catStats).forEach(([cat, s]) => {
+      if(!accum[cat]) accum[cat] = {correct:0, total:0, sessions:0};
+      accum[cat].correct  += s.correct;
+      accum[cat].total    += s.total;
+      accum[cat].sessions += 1;
+    });
+  });
+
+  // モード別に分けて表示（直近1回 vs 累積）
+  // 直近データ
+  const latest = records[records.length - 1];
+  const latestCats = latest.catStats || {};
+
+  const ORDER1 = ['地理','地図記号','縮尺計算'];
+  const ORDER2 = ['歴史②'];
+  const ORDER3 = ['産業③','地理③'];
+  const ORDER4 = ['気候④','地形④','林業④','世界遺産④','環境④'];
+  const order  = topCatDeck === 1 ? ORDER1 : topCatDeck === 3 ? ORDER3 : topCatDeck === 4 ? ORDER4 : ORDER2;
+  const allCats = [...new Set([...order, ...Object.keys(accum)])];
+  allCats.sort((a,b) => {
+    const ai = order.indexOf(a), bi = order.indexOf(b);
+    return (ai<0?99:ai) - (bi<0?99:bi);
+  });
+
+  // 弱点・得意分野判定（累積）
+  const weak = [], strong = [];
+  allCats.forEach(cat => {
+    const s = accum[cat];
+    if(!s) return;
+    const pct = s.total > 0 ? Math.round(s.correct/s.total*100) : 0;
+    if(pct < 60) weak.push(cat);
+    if(pct >= 80) strong.push(cat);
+  });
+
+  function catRowHtml(cat, correct, total){
+    const pct = total > 0 ? Math.round(correct/total*100) : 0;
+    const cls = pct >= 80 ? 'hi' : pct >= 60 ? 'mid' : 'lo';
+    return `<div class="top-cat-row">
+      <div class="top-cat-row-hd">
+        <span class="top-cat-name">${escHtml(cat)}</span>
+        <span class="top-cat-pct ${cls}">${pct}%</span>
+      </div>
+      <div class="top-cat-bar-bg"><div class="top-cat-bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="top-cat-detail">${correct} / ${total}問正解　(${records.length}回分累積)</div>
+    </div>`;
+  }
+
+  // 直近セクション
+  let html = '<div class="top-cat-section">';
+  html += '<div class="top-cat-mode-label">直近の結果（'+latest.date+'）</div>';
+  allCats.forEach(cat => {
+    const s = latestCats[cat];
+    if(!s) return;
+    const pct = s.total > 0 ? Math.round(s.correct/s.total*100) : 0;
+    const cls = pct >= 80 ? 'hi' : pct >= 60 ? 'mid' : 'lo';
+    html += `<div class="top-cat-row">
+      <div class="top-cat-row-hd">
+        <span class="top-cat-name">${escHtml(cat)}</span>
+        <span class="top-cat-pct ${cls}">${pct}%</span>
+      </div>
+      <div class="top-cat-bar-bg"><div class="top-cat-bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="top-cat-detail">${s.correct} / ${s.total}問正解</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // 累積セクション（2回以上ある場合）
+  if(records.length >= 2){
+    html += '<div class="top-cat-section">';
+    html += '<div class="top-cat-mode-label">累積正答率（全'+records.length+'回分）</div>';
+    allCats.forEach(cat => {
+      const s = accum[cat];
+      if(!s) return;
+      html += catRowHtml(cat, s.correct, s.total);
+    });
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+
+  // 弱点・得意サマリ
+  if(weak.length > 0 || strong.length > 0){
+    let chips = '';
+    if(weak.length > 0) chips += weak.map(c=>`<span class="top-cat-summary-chip weak">⚠ ${escHtml(c)}</span>`).join('');
+    if(strong.length > 0) chips += strong.map(c=>`<span class="top-cat-summary-chip strong">✓ ${escHtml(c)}</span>`).join('');
+    body.insertAdjacentHTML('beforeend','<div class="top-cat-summary">'+chips+'</div>');
+  }
+
+  panel.style.display = 'block';
+}
+
+// ============================================================
+// TOP画面 — ランキングパネル
+// ============================================================
+let topRankMode = 'normal'; // 'normal' | 'time'
+let topRankDeck = 0;         // 0=all, 1, 2, 3, 4
+
+function switchTopRankTab(m){
+  topRankMode = m;
+  document.getElementById('rtop-normal').classList.toggle('active', m==='normal');
+  document.getElementById('rtop-time').classList.toggle('active', m==='time');
+  document.getElementById('rtop-exam').classList.toggle('active', m==='exam');
+  renderTopRankPanel();
+}
+
+function switchRankDeck(n){
+  topRankDeck = n;
+  [0,1,2,3,4].forEach(i => {
+    const el = document.getElementById('rdtab-'+i);
+    if(el) el.classList.toggle('active', i===n);
+  });
+  renderTopRankPanel();
+}
+
+function renderTopRankPanel(){
+  const panel = document.getElementById('top-rank-panel');
+  const body  = document.getElementById('top-rank-body');
+  let data = [];
+  try{ data = JSON.parse(localStorage.getItem('flashcard_ranking')||'[]'); }catch(e){}
+
+  // モード絞り込み
+  let filtered = data.filter(r =>
+    topRankMode==='time' ? r.mode==='time' :
+    topRankMode==='exam' ? r.mode==='exam' :
+    (r.mode!=='time'&&r.mode!=='exam')
+  );
+  // デッキ絞り込み
+  if(topRankDeck > 0) filtered = filtered.filter(r => (r.deckNo||1) === topRankDeck);
+
+  filtered.sort((a,b) => b.score - a.score);
+  const top = filtered.slice(0, 10);
+
+  if(top.length === 0){
+    body.innerHTML = '<div class="top-rank-empty">まだ記録がありません<br>プレイして記録を残そう！</div>';
+    panel.style.display = 'block';
+    return;
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+  const deckLabel = r => r.deckNo===4 ? '④' : r.deckNo===3 ? '③' : r.deckNo===2 ? '②' : '①';
+  body.innerHTML = '<div class="top-rank-list">' + top.map((r,i) => {
+    const medal = medals[i] || `<span style="font-size:12px;color:var(--text-muted)">${i+1}</span>`;
+    const scoreLabel = topRankMode==='time' ? r.score+'pt' : r.score+'%';
+    const deckTag = topRankDeck===0 ? `<span style="font-size:10px;background:#eef3fb;border-radius:4px;padding:1px 5px;color:var(--blue-mid);font-weight:700;">対策${deckLabel(r)}</span> ` : '';
+    const detail = topRankMode==='time'
+      ? `${deckTag}${r.correct}/${r.total}問　${fmtTime(r.elapsed||0)}　⭐${r.bonus}pt　${r.date}`
+      : topRankMode==='exam'
+      ? `${deckTag}${r.correct}/${r.total}問正解　${fmtTime(r.elapsed||0)}　${r.date}`
+      : `${deckTag}${r.correct}/${r.total}問正解　${r.date}`;
+    return `<div class="top-rank-item">
+      <div class="top-rank-medal">${medal}</div>
+      <div class="top-rank-info">
+        <div class="top-rank-name">${escHtml(r.name||'名無し')}</div>
+        <div class="top-rank-detail">${detail}</div>
+      </div>
+      <div class="top-rank-score">${scoreLabel}</div>
+    </div>`;
+  }).join('') + '</div>';
+
+  panel.style.display = 'block';
+}
+
+function clearRankingTop(){
+  if(!confirm('ランキングをすべて削除しますか？'))return;
+  localStorage.removeItem('flashcard_ranking');
+  renderTopRankPanel();
+  renderTopCatPanel();
+}
+
+// ============================================================
+// TOP画面パネルまとめて更新
+// ============================================================
+function refreshTopPanels(){
+  renderTopCatPanel();
+  renderTopRankPanel();
+}
+
+// ============================================================
+// 一時保存 / 再開
+// ============================================================
+const SAVE_KEY = 'flashcard_progress';
+
+function saveProgress(){
+  const qa = getActiveQA();
+  const deckIds = deck.map(item => qa.indexOf(item));
+  const data = {
+    currentDeck, mode, idx, correct, wrong,
+    wrongIds, totalBonus, totalElapsed,
+    deckIds,
+    savedAt: Date.now()
+  };
+  localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  // ボタンに保存済み表示
+  const btn = document.getElementById('header-save-btn');
+  btn.classList.add('saved');
+  btn.textContent = '✅';
+  setTimeout(()=>{ btn.classList.remove('saved'); btn.textContent='💾'; }, 2000);
+  showToast('💾 進捗を保存しました');
+}
+
+function showToast(msg){
+  const t = document.getElementById('save-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function checkResumeData(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw){ document.getElementById('resume-card').style.display='none'; }
+    else {
+      const d = JSON.parse(raw);
+      const deckLabel = d.currentDeck===4 ? '月例テスト対策④' : d.currentDeck===3 ? '月例テスト対策③' : d.currentDeck===2 ? '月例テスト対策②' : '月例テスト対策①';
+      const dt = new Date(d.savedAt);
+      const timeStr = dt.toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'})
+                    + ' ' + dt.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+      const total = d.currentDeck===1 ? 62 : 50;
+      document.getElementById('resume-title').textContent = deckLabel + ' の続き';
+      document.getElementById('resume-desc').textContent =
+        `${d.idx}/${total}問完了　正解${d.correct}問　保存：${timeStr}`;
+      document.getElementById('resume-card').style.display='flex';
+    }
+  }catch(e){
+    document.getElementById('resume-card').style.display='none';
+  }
+  refreshTopPanels();
+}
+
+function resumeProgress(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw){ alert('保存データが見つかりません。'); return; }
+    const d = JSON.parse(raw);
+    currentDeck = d.currentDeck;
+    mode = d.mode;
+    correct = d.correct;
+    wrong = d.wrong;
+    wrongIds = d.wrongIds || [];
+    totalBonus = d.totalBonus || 0;
+    totalElapsed = d.totalElapsed || 0;
+    catStats = {};
+    sessionStartTime = Date.now();
+
+    // deckを復元
+    const qa = getActiveQA();
+    deck = (d.deckIds || []).map(i=>qa[i]).filter(Boolean);
+    idx = Math.min(d.idx, deck.length);
+
+    // UI切替
+    document.getElementById('top-select').style.display='none';
+    document.getElementById('quiz-area').style.display='block';
+    document.getElementById('results').style.display='none';
+    const labels4 = {1:'月例テスト対策①',2:'月例テスト対策②',3:'月例テスト対策③',4:'月例テスト対策④'};
+    const label = labels4[currentDeck] || '月例テスト対策①';
+    document.getElementById('header-title').innerHTML = label.replace('①','<span>①</span>').replace('②','<span>②</span>').replace('③','<span>③</span>').replace('④','<span>④</span>');
+    document.getElementById('header-back').style.display='block';
+    document.getElementById('header-save-btn').style.display='block';
+    const geoBtn = document.getElementById('m-geo');
+    const mapBtn = document.getElementById('m-map');
+    if(currentDeck===2){
+      geoBtn.textContent='歴史②'; mapBtn.style.display='none';
+    } else if(currentDeck===3){
+      geoBtn.textContent='産業③'; mapBtn.style.display='none';
+    } else if(currentDeck===4){
+      geoBtn.textContent='気候④'; mapBtn.style.display='none';
+    } else {
+      geoBtn.textContent='地理'; mapBtn.style.display='';
+    }
+    ['all','geo','map','wrong','time','exam'].forEach(x=>{
+      const el=document.getElementById('m-'+x);
+      if(el) el.classList.toggle('active',x===mode);
+    });
+    document.getElementById('timer-bar').style.display=(mode==='time')?'flex':'none';
+    render();
+    showToast('▶️ 続きから再開しました');
+  }catch(e){
+    alert('データの読み込みに失敗しました。');
+  }
+}
+
+function confirmGoTop(){
+  if(idx===0){goTop();return;}
+  if(confirm('トップ画面に戻りますか？\n（進捗は保存されていません。「💾」で保存してから戻ることをおすすめします）')){
+    goTop();
+  }
+}
+
+// ============================================================
+// 状態変数
+// ============================================================
+let deck=[],idx=0,correct=0,wrong=0,mode='all',wrongIds=[];
+const TIME_LIMIT=15;
+let timerInterval=null,timeLeft=TIME_LIMIT,totalBonus=0,sessionStartTime=0,totalElapsed=0;
+let pendingResult=null;
+let rankTab='time';
+let catStats={};
+
+const CHOICE_LABELS = ['A','B','C','D'];
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function getChoices(item){
+  const qa = getActiveQA();
+  const tw = currentDeck === 4 ? TRICKY_WRONG_4 : currentDeck === 3 ? TRICKY_WRONG_3 : currentDeck === 2 ? TRICKY_WRONG_2 : TRICKY_WRONG;
+  const tricky=tw[item.a];
+  if(tricky&&tricky.length>=3) return shuffle([item.a,...tricky.slice(0,3)]);
+  const pool=qa.filter(q=>q.a!==item.a);
+  const same=shuffle(pool.filter(q=>q.cat===item.cat));
+  const other=shuffle(pool.filter(q=>q.cat!==item.cat));
+  const seen=new Set([item.a]);const result=[];
+  for(const c of [...same,...other]){if(!seen.has(c.a)){seen.add(c.a);result.push(c.a);}if(result.length>=3)break;}
+  return shuffle([item.a,...result]);
+}
+
+// ============================================================
+// モード切替
+// ============================================================
+function setMode(m){
+  mode=m;
+  ['all','geo','map','wrong','time','exam'].forEach(x=>{
+    const el=document.getElementById('m-'+x);
+    if(el) el.classList.toggle('active',x===m);
+  });
+  if(m==='wrong'&&wrongIds.length===0){alert('まだ間違えた問題がありません。');setMode('all');return;}
+  restart();
+}
+
+function buildDeck(){
+  const qa = getActiveQA();
+  if(mode==='time') deck=shuffle([...qa]).slice(0,10);
+  else if(mode==='all') deck=shuffle([...qa]).slice(0,5);
+  else if(mode==='geo') deck=shuffle(qa.filter(q=>q.cat==='地理'||q.cat==='歴史②')).slice(0,5);
+  else if(mode==='map') deck=shuffle(qa.filter(q=>q.cat==='地図記号')).slice(0,5);
+  else if(mode==='wrong') deck=shuffle(qa.filter((_,i)=>wrongIds.includes(i))).slice(0,5);
+  else if(mode==='exam') deck=[...qa]; // 全問・シャッフルなし・本番モード
+}
+
+// ============================================================
+// タイマー制御
+// ============================================================
+function stopTimer(){
+  if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+}
+
+function startTimer(){
+  stopTimer();
+  timeLeft=TIME_LIMIT;
+  updateTimerUI();
+  timerInterval=setInterval(()=>{
+    timeLeft--;
+    updateTimerUI();
+    if(timeLeft<=0){stopTimer();onTimeUp();}
+  },1000);
+}
+
+function updateTimerUI(){
+  const num=document.getElementById('timer-num');
+  const fg=document.getElementById('timer-fg');
+  const circle=document.getElementById('timer-circle');
+  const CIRC=125.66;
+  if(!num)return;
+  num.textContent=timeLeft;
+  const offset=CIRC*(1-timeLeft/TIME_LIMIT);
+  fg.style.strokeDashoffset=offset;
+  circle.classList.toggle('timer-urgent',timeLeft<=5);
+  const bonus=calcBonus(timeLeft);
+  document.getElementById('bonus-pts').textContent=bonus;
+}
+
+function calcBonus(t){return Math.max(0,Math.floor(t/TIME_LIMIT*10));}
+
+function onTimeUp(){
+  const item=deck[idx];
+  if(!item)return;
+  document.querySelectorAll('.choice-btn').forEach(b=>{
+    b.classList.add('disabled');
+    if(b.dataset.answer===item.a)b.classList.add('show-correct');
+  });
+  const origIdx=getActiveQA().indexOf(item);
+  const cat=item.cat||'その他';
+  if(!catStats[cat])catStats[cat]={correct:0,total:0};
+  catStats[cat].total++;
+  wrong++;
+  if(!wrongIds.includes(origIdx))wrongIds.push(origIdx);
+  const fb=document.getElementById('feedback');
+  fb.textContent='⏰ 時間切れ！正解は「'+item.a+'」です。';
+  fb.className='feedback wrong';
+  showExplanation(item.a);
+  document.getElementById('s-correct').textContent=correct;
+  document.getElementById('s-wrong').textContent=wrong;
+  document.getElementById('btn-next').style.display='block';
+  idx++;
+}
+
+// ============================================================
+// restart / render
+// ============================================================
+function restart(){
+  stopTimer();
+  correct=0;wrong=0;idx=0;wrongIds=[];totalBonus=0;totalElapsed=0;catStats={};
+  sessionStartTime=Date.now();
+  buildDeck();
+  document.getElementById('results').style.display='none';
+  document.getElementById('quiz-area').style.display='block';
+  document.getElementById('timer-bar').style.display=(mode==='time')?'flex':'none';
+  render();
+}
+
+function reviewWrong(){
+  if(wrongIds.length===0){alert('間違えた問題はありません。');return;}
+  mode='wrong';
+  ['all','geo','map','wrong','time','exam'].forEach(x=>{
+    const el=document.getElementById('m-'+x);
+    if(el) el.classList.toggle('active',x==='wrong');
+  });
+  correct=0;wrong=0;idx=0;buildDeck();wrongIds=[];
+  stopTimer();totalBonus=0;
+  document.getElementById('results').style.display='none';
+  document.getElementById('quiz-area').style.display='block';
+  document.getElementById('timer-bar').style.display='none';
+  render();
+}
+
+function render(){
+  if(idx>=deck.length){showResults();return;}
+  const item=deck[idx];
+  const num=String(idx+1).padStart(2,'0');
+  document.getElementById('q-num').textContent='QUESTION '+num;
+  document.getElementById('counter').textContent=(idx+1)+' / '+deck.length;
+  document.getElementById('q-text').textContent=item.q;
+  document.getElementById('cat-badge').textContent=item.cat;
+  document.getElementById('feedback').className='feedback';
+  document.getElementById('feedback').textContent='';
+  document.getElementById('explanation').className='explanation';
+  document.getElementById('explanation').innerHTML='';
+  document.getElementById('btn-next').style.display='none';
+
+  const pct=Math.round((idx/deck.length)*100);
+  document.getElementById('header-prog').style.width=pct+'%';
+  document.getElementById('s-remaining').textContent=deck.length-idx;
+  document.getElementById('s-correct').textContent=correct;
+  document.getElementById('s-wrong').textContent=wrong;
+
+  const symEl=document.getElementById('map-symbol');
+  if(item.sym&&MAP_SYMBOLS[item.sym]){
+    const fname=MAP_SYMBOLS[item.sym];
+    const imgUrl='https://commons.wikimedia.org/wiki/Special:FilePath/'+encodeURIComponent(fname);
+    symEl.style.display='flex';
+    symEl.innerHTML='<img src="'+imgUrl+'" alt="'+item.sym+'" loading="lazy">';
+  } else {
+    symEl.style.display='none';symEl.innerHTML='';
+  }
+
+  const options=getChoices(item);
+  const choicesEl=document.getElementById('choices');
+  choicesEl.innerHTML='';
+  options.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='choice-btn';
+    btn.setAttribute('data-label',CHOICE_LABELS[i]);
+    btn.setAttribute('data-answer',opt);
+    btn.textContent=opt;
+    btn.onclick=()=>selectAnswer(opt,item.a,btn,item);
+    choicesEl.appendChild(btn);
+  });
+
+  if(mode==='time') startTimer();
+}
+
+function showExplanation(ans){
+  const expData = EXPLANATIONS_4[ans] || EXPLANATIONS_3[ans] || EXPLANATIONS[ans];
+  if(expData){
+    const expEl=document.getElementById('explanation');
+    expEl.innerHTML=expData.text+'<a href="'+expData.url+'" target="_blank" rel="noopener">参考：'+expData.url+'</a>';
+    expEl.className='explanation visible';
+  }
+}
+
+function selectAnswer(selected,correctAns,clickedBtn,item){
+  stopTimer();
+  document.querySelectorAll('.choice-btn').forEach(b=>{
+    b.classList.add('disabled');
+    if(b.dataset.answer===correctAns)b.classList.add('show-correct');
+  });
+  const origIdx=getActiveQA().indexOf(item);
+  const cat=item.cat||'その他';
+  if(!catStats[cat])catStats[cat]={correct:0,total:0};
+  catStats[cat].total++;
+  const fb=document.getElementById('feedback');
+  if(selected===correctAns){
+    const bonus=calcBonus(timeLeft);
+    if(mode==='time') totalBonus+=bonus;
+    correct++;
+    catStats[cat].correct++;
+    clickedBtn.classList.add('selected-correct');
+    fb.textContent=mode==='time'?'✓ 正解！ +'+ bonus +'pt':'✓ 正解！';
+    fb.className='feedback correct';
+  } else {
+    wrong++;
+    if(!wrongIds.includes(origIdx))wrongIds.push(origIdx);
+    clickedBtn.classList.add('selected-wrong');
+    fb.textContent='✗ 不正解… 正解は「'+correctAns+'」です。';
+    fb.className='feedback wrong';
+  }
+  showExplanation(correctAns);
+  document.getElementById('s-correct').textContent=correct;
+  document.getElementById('s-wrong').textContent=wrong;
+  document.getElementById('btn-next').style.display='block';
+  idx++;
+}
+
+function nextCard(){render();}
+
+function goTop(){
+  stopTimer();
+  mode='all'; currentDeck=1;
+  correct=0;wrong=0;idx=0;wrongIds=[];totalBonus=0;totalElapsed=0;catStats={};
+  document.getElementById('results').style.display='none';
+  document.getElementById('quiz-area').style.display='none';
+  document.getElementById('top-select').style.display='flex';
+  document.getElementById('header-title').innerHTML='社会 <span>フラッシュカード</span>';
+  document.getElementById('header-back').style.display='none';
+  document.getElementById('header-save-btn').style.display='none';
+  document.getElementById('header-save-btn').classList.remove('saved');
+  document.getElementById('timer-bar').style.display='none';
+  // モードボタン初期化
+  document.getElementById('m-geo').textContent='地理';
+  document.getElementById('m-map').style.display='';
+  ['all','geo','map','wrong','time','exam'].forEach(x=>{
+    const el=document.getElementById('m-'+x);
+    if(el) el.classList.toggle('active',x==='all');
+  });
+  checkResumeData();
+}
+
+// ============================================================
+// 結果表示
+// ============================================================
+function showResults(){
+  stopTimer();
+  totalElapsed=Math.round((Date.now()-sessionStartTime)/1000);
+  document.getElementById('quiz-area').style.display='none';
+  document.getElementById('results').style.display='block';
+  const total=correct+wrong;
+  const pct=total>0?Math.round((correct/total)*100):0;
+  const timeScore=pct/10+totalBonus;
+  document.getElementById('header-prog').style.width='100%';
+  document.getElementById('exam-mode-badge').style.display = (mode==='exam') ? 'block' : 'none';
+  if(mode==='time'){
+    document.getElementById('final-score').textContent=Math.round(timeScore)+'pt';
+    document.getElementById('result-time-row').style.display='block';
+    document.getElementById('result-time-row').textContent=
+      '⏱ 所要時間: '+fmtTime(totalElapsed)+'　⭐ ボーナス: '+totalBonus+'pt　正解率: '+pct+'%';
+  } else if(mode==='exam'){
+    document.getElementById('final-score').textContent=pct+'%';
+    document.getElementById('result-time-row').style.display='block';
+    document.getElementById('result-time-row').textContent=
+      '⏱ 所要時間: '+fmtTime(totalElapsed)+'　全'+total+'問完走';
+  } else {
+    document.getElementById('final-score').textContent=pct+'%';
+    document.getElementById('result-time-row').style.display='none';
+  }
+  document.getElementById('r-correct').textContent=correct;
+  document.getElementById('r-wrong').textContent=wrong;
+  const msgs=pct>=90?'素晴らしい！完璧に近い正解率です。':pct>=70?'よくできました！あと少しで完璧です。':pct>=50?'もう一息！苦手な問題を復習しましょう。':'もう一度チャレンジ！繰り返しが大切です。';
+  document.getElementById('final-msg').textContent=msgs;
+  renderCatBreakdown();
+  pendingResult={
+    mode:mode, pct:pct, correct:correct, wrong:wrong, total:total,
+    bonus:totalBonus, elapsed:totalElapsed,
+    score:mode==='time'?Math.round(timeScore):pct,
+    date:new Date().toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'}),
+    deckNo:currentDeck,
+    catStats:JSON.parse(JSON.stringify(catStats))
+  };
+  setTimeout(()=>openNameModal(), 400);
+}
+
+function fmtTime(sec){
+  const m=Math.floor(sec/60),s=sec%60;
+  return m>0?m+'分'+String(s).padStart(2,'0')+'秒':s+'秒';
+}
+
+// ============================================================
+// 分野別正答率
+// ============================================================
+function renderCatBreakdown(){
+  const area=document.getElementById('cat-breakdown');
+  const cats=Object.keys(catStats);
+  if(cats.length===0){area.style.display='none';return;}
+  area.style.display='block';
+  const ORDER=['地理','地図記号','縮尺計算','その他'];
+  cats.sort((a,b)=>{const ai=ORDER.indexOf(a),bi=ORDER.indexOf(b);return (ai<0?99:ai)-(bi<0?99:bi);});
+  let html='<h3>📊 分野別正答率</h3>';
+  cats.forEach(cat=>{
+    const s=catStats[cat];
+    const pct=s.total>0?Math.round((s.correct/s.total)*100):0;
+    const isLow=pct<60;
+    html+=
+      '<div class="cat-row">'+
+        '<div class="cat-row-header">'+
+          '<span class="cat-name">'+escHtml(cat)+'</span>'+
+          '<span class="cat-pct'+(isLow?' low':'')+'">'+pct+'%</span>'+
+        '</div>'+
+        '<div class="cat-bar-bg"><div class="cat-bar-fill'+(isLow?' low':'')+'" style="width:'+pct+'%"></div></div>'+
+        '<div class="cat-detail">'+s.correct+' / '+s.total+'問正解</div>'+
+      '</div>';
+  });
+  area.innerHTML=html;
+}
+
+// ============================================================
+// 名前入力モーダル
+// ============================================================
+function openNameModal(){
+  const m=document.getElementById('name-modal');
+  const p=document.getElementById('name-score-preview');
+  if(!pendingResult)return;
+  const r=pendingResult;
+  p.textContent=r.mode==='time'
+    ?'スコア: '+r.score+'pt　正解'+r.correct+'/'+r.total+'問　時間: '+fmtTime(r.elapsed)
+    :r.mode==='exam'
+    ?'正解率: '+r.score+'%　'+r.correct+'/'+r.total+'問正解　時間: '+fmtTime(r.elapsed)
+    :'正解率: '+r.score+'%　'+r.correct+'/'+r.total+'問正解';
+  document.getElementById('name-input').value='';
+  m.classList.add('open');
+}
+
+function closeNameModal(){document.getElementById('name-modal').classList.remove('open');}
+
+function saveScore(){
+  const name=document.getElementById('name-input').value.trim()||'名無し';
+  if(!pendingResult)return;
+  const r={...pendingResult,name};
+  const key='flashcard_ranking';
+  let data=[];
+  try{data=JSON.parse(localStorage.getItem(key)||'[]');}catch(e){}
+  data.push(r);
+  localStorage.setItem(key,JSON.stringify(data));
+  pendingResult=null;
+  closeNameModal();
+}
+
+function skipSave(){pendingResult=null;closeNameModal();}
+
+// ============================================================
+// ランキングモーダル
+// ============================================================
+function openRanking(){
+  document.getElementById('ranking-modal').classList.add('open');
+  renderRankList();
+}
+
+function closeRanking(){document.getElementById('ranking-modal').classList.remove('open');}
+
+function switchRankTab(tab){
+  rankTab=tab;
+  document.getElementById('rtab-time').classList.toggle('active',tab==='time');
+  document.getElementById('rtab-normal').classList.toggle('active',tab==='normal');
+  document.getElementById('rtab-exam').classList.toggle('active',tab==='exam');
+  renderRankList();
+}
+
+function renderRankList(){
+  const area=document.getElementById('rank-list-area');
+  let data=[];
+  try{data=JSON.parse(localStorage.getItem('flashcard_ranking')||'[]');}catch(e){}
+  const filtered=data.filter(r=>
+    rankTab==='time' ? r.mode==='time' :
+    rankTab==='exam' ? r.mode==='exam' :
+    (r.mode!=='time'&&r.mode!=='exam')
+  );
+  filtered.sort((a,b)=>b.score-a.score);
+  const top=filtered.slice(0,10);
+  if(top.length===0){
+    area.innerHTML='<div class="rank-empty">まだ記録がありません<br>プレイして記録を残そう！</div>';
+    return;
+  }
+  const medals=['🥇','🥈','🥉'];
+  area.innerHTML=top.map((r,i)=>{
+    const medal=medals[i]||'<span style="font-size:13px;color:var(--text-muted)">'+(i+1)+'</span>';
+    const scoreLabel=rankTab==='time'?r.score+'pt':r.score+'%';
+    const detail=rankTab==='time'
+      ?r.correct+'/'+r.total+'問　'+fmtTime(r.elapsed||0)+'　⭐'+r.bonus+'pt　'+r.date
+      :rankTab==='exam'
+      ?r.correct+'/'+r.total+'問正解　'+fmtTime(r.elapsed||0)+'　'+r.date
+      :r.correct+'/'+r.total+'問正解　'+r.date;
+    return '<div class="rank-item"><div class="rank-medal">'+medal+'</div><div class="rank-info"><div class="rank-name">'+escHtml(r.name||'名無し')+'</div><div class="rank-detail">'+detail+'</div></div><div class="rank-score">'+scoreLabel+'</div></div>';
+  }).join('');
+}
+
+function escHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function clearRanking(){
+  if(!confirm('ランキングをすべて削除しますか？'))return;
+  localStorage.removeItem('flashcard_ranking');
+  renderRankList();
+}
+
+// 初期表示はTOP選択画面のみ
+document.getElementById('top-select').style.display='flex';
+document.getElementById('quiz-area').style.display='none';
+document.getElementById('results').style.display='none';
+checkResumeData();
+</script>
+</body>
+</html>
